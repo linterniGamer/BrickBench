@@ -249,7 +249,8 @@ public class SceneFileWriter {
         var writer = EditorState.getActiveMap().getFileOfExtension("gsc").channel();
         writer.position(0);
         var NU20Start = Util.readLittleEndianInt(writer);
-        if(NU20Start > address){
+
+        if(NU20Start >= address){
             MapWriter.applyPatch(SCENE, 0, Util.littleEndian(NU20Start + space));
             return;
         }
