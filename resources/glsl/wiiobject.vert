@@ -48,6 +48,10 @@ uniform int invertY;
 uniform vec3 billboardCenter;
 uniform vec2 billboardSize;
 uniform vec4 lightmapOffset;
+uniform vec2 uvOffset0;
+uniform vec2 uvOffset1;
+uniform vec2 uvOffset2;
+uniform vec2 uvOffset3;
 
 void pipeColorSet0(){
     vec3 gammaMeshColor = pow(color.rgb, vec3(gamma));
@@ -89,12 +93,11 @@ void main() {
     pipeColorSet0();
     pipeLightDirSet();
 
-    uv0 = vs_uv0;
+    uv0 = vs_uv0+uvOffset0;
     if(LIGHTMAP_UVSET == 0){
         lightmapCoord = vs_uv0 * lightmapOffset.zw + lightmapOffset.xy;
     }else if(LIGHTMAP_UVSET == 1){
         lightmapCoord = vs_uv1 * lightmapOffset.zw + lightmapOffset.xy;
-        //lightmapCoord = lightmapOffset.xy;
     }else if(LIGHTMAP_UVSET == 2){
         lightmapCoord = vs_uv2 * lightmapOffset.zw + lightmapOffset.xy;
     }else{
@@ -102,22 +105,22 @@ void main() {
     }
 
     if(SURFACE_UVSET == 0){
-        normalCoord = vs_uv0;
+        normalCoord = vs_uv0+uvOffset0;
     }else if(SURFACE_UVSET == 1){
-        normalCoord = vs_uv1;
+        normalCoord = vs_uv1+uvOffset1;
     }else if(SURFACE_UVSET == 2){
-        normalCoord = vs_uv2;
+        normalCoord = vs_uv2+uvOffset2;
     }else if(SURFACE_UVSET == 3){
-        normalCoord = vs_uv3;
+        normalCoord = vs_uv3+uvOffset3;
     }
     
     if(SPECULAR_UVSET == 0){
-        specularCoord = vs_uv0;
+        specularCoord = vs_uv0+uvOffset0;
     }else if(SPECULAR_UVSET == 1){
-        specularCoord = vs_uv1;
+        specularCoord = vs_uv1+uvOffset1;
     }else if(SPECULAR_UVSET == 2){
-        specularCoord = vs_uv2;
+        specularCoord = vs_uv2+uvOffset2;
     }else if(SPECULAR_UVSET == 3){
-        specularCoord = vs_uv3;
+        specularCoord = vs_uv3+uvOffset3;
     }
 }

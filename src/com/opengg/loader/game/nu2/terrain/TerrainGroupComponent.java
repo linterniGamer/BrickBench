@@ -50,12 +50,12 @@ public class TerrainGroupComponent extends EditorEntityRenderComponent {
                 Vector3f newV3 = face.vec3();
                 Vector3f newV4 = face.vec4();
 
-                int flag1 = face.flag1();
-                int flag2 = face.flag2();
+                int surface = face.flag1();
+                int layer = face.flag2();
 
                 //flags
-                TerrainGroup.TerrainProperty collisionType = switch (flag2){
-                    case 0 -> switch (flag1){
+                TerrainGroup.TerrainProperty collisionType = switch (layer){
+                    case 0 -> switch (surface){
                         case 0 -> NONE;
                         case 1 -> FASTKILL;
                         case 2 -> REFLECTIVE_FLOOR; //not visualized
@@ -99,7 +99,7 @@ public class TerrainGroupComponent extends EditorEntityRenderComponent {
                 fb.putFloat(newV3.x).putFloat(newV3.y).putFloat(newV3.z).putFloat(norm2.x).putFloat(norm2.y).putFloat(norm2.z).putFloat(collisionType.color.x).putFloat(collisionType.color.y).putFloat(collisionType.color.z);
             }
             fb.flip();
-            setRenderable(new TextureRenderable(DrawnObject.create(collisionFormat, fb.asFloatBuffer()), Texture.ofColor(Color.getHSBColor((float) Math.random(), 1, 0.5f ))));
+            setRenderable(new TextureRenderable(DrawnObject.create(collisionFormat, fb.asFloatBuffer()), Texture.ofColor(Color.RED)));
         }
 
 
@@ -117,7 +117,7 @@ public class TerrainGroupComponent extends EditorEntityRenderComponent {
 
     @Override
     public void render(){
-        OpenGLRenderer.getOpenGLRenderer().setBackfaceCulling(true);
+        OpenGLRenderer.getOpenGLRenderer().setBackfaceCulling(false);
         
         if(EditorState.CURRENT.shouldHighlight && EditorState.getSelectedObject().get() instanceof TerrainGroup obj && obj != this.terrainGroup) {
             ShaderController.setUniform("muteColors", 1);
@@ -127,7 +127,7 @@ public class TerrainGroupComponent extends EditorEntityRenderComponent {
 
         super.render();
 
-        OpenGLRenderer.getOpenGLRenderer().setBackfaceCulling(false);
+        OpenGLRenderer.getOpenGLRenderer().setBackfaceCulling(true);
     }
 
     public TerrainGroup getTerrainGroup() {

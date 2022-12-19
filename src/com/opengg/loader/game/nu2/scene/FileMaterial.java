@@ -1,11 +1,14 @@
 package com.opengg.loader.game.nu2.scene;
 
 import com.opengg.core.engine.Resource;
+import com.opengg.core.math.FastMath;
+import com.opengg.core.math.Vector2f;
 import com.opengg.core.math.Vector3f;
 import com.opengg.core.math.Vector4f;
 import com.opengg.core.render.internal.opengl.OpenGLRenderer;
 import com.opengg.core.render.shader.ShaderController;
 import com.opengg.core.render.shader.VertexArrayBinding;
+import com.opengg.core.render.shader.VertexArrayFormat;
 import com.opengg.core.render.texture.Texture;
 import com.opengg.loader.BrickBench;
 import com.opengg.loader.Project;
@@ -23,10 +26,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,6 +40,7 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
     private int formatBits = 0;
     private int inputDefinesBits = 0;
     private int shaderDefinesBits = 0;
+    private byte combineOp1 = 0;
     private int uvSetCoords = 0;
     private int lightmapSetIndex = 0;
     private int specularSetIndex = 0;
@@ -60,6 +62,7 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
     boolean loadedTextures = false;
 
     private FileTexture fileDiffuse;
+    private FileTexture layer1DiffuseTex;
     private FileTexture fileNormal;
     private FileTexture fileSpecular;
     
@@ -68,6 +71,14 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
     private final List<VertexArrayBinding.VertexArrayAttribute> arrayFormat = new ArrayList<>();
     private int ID;
     private int fileAddress;
+    private Vector2f[] uvOffset = new Vector2f[]{new Vector2f(),new Vector2f(),new Vector2f(),new Vector2f()};
+    private byte[] uvOffAnimTypeX = new byte[4];
+    private byte[] uvOffAnimTypeY = new byte[4];
+    private int[] uvOffAnimEnabled = new int[]{-1,-1,-1,-1};
+    private float uvOffAnimParam1;
+    private Vector2f[] timeInputDeltaStep= new Vector2f[]{new Vector2f(),new Vector2f(),new Vector2f(),new Vector2f()};
+    private Vector2f[] trigScaling = new Vector2f[]{new Vector2f(),new Vector2f(),new Vector2f(),new Vector2f()};
+    private float sineTime = 0;
 
     public FileMaterial(int fileAddress) {
         this.fileAddress = fileAddress;
@@ -90,6 +101,145 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
                 icon.complete(new ImageIcon(Util.getScaledImage(95, 95, image)));
             }
         }
+    }
+    static Map<Integer, List<VertexArrayBinding.VertexArrayAttribute>> formats = new HashMap<>();
+    public void generateFormat2(){
+        if(formats.containsKey(formatBits)){
+            arrayFormat.clear();
+            arrayFormat.addAll(formats.get(formatBits));
+        }
+        int normalType;
+        if(((formatBits & 8) == 0) && ((formatBits & 0x880000) == 0)){
+            normalType = formatBits >> 2 & 1;
+        }else{
+            normalType = 2;
+        }
+        int tangentType;
+        if (((formatBits & 0x20) == 0) && ((formatBits & 0x1000000) == 0)) {
+            tangentType = formatBits >> 4 & 1;
+        }
+        else {
+            tangentType = 2;
+        }
+        int tangentType2 = 2;
+        if ((formatBits & 0x2000080) == 0) {
+            tangentType2 = formatBits & 0x40 & 1;
+        }
+
+        int colorType = formatBits >> 8 & 1;
+        int texCoordFlag1;
+        int texCoordFlag2;
+        if ((formatBits >> 0x1b & 1) == 0) {
+            texCoordFlag1 = formatBits >> 0xb & 7;
+            texCoordFlag2 = 0;
+        }
+        else {
+            texCoordFlag1 = 0;
+            texCoordFlag2 = formatBits >> 0xb & 7;
+        }
+        int blendWeight;
+        if ((formatBits & 0x8000) == 0) {
+            blendWeight = formatBits >> 0xe & 1;
+        }
+        else {
+            blendWeight = 2;
+        }
+        int blendIndices;
+        if ((formatBits & 0x20000) == 0) {
+            blendIndices = formatBits >> 0x10 & 1;
+        }
+        else {
+            blendIndices = 2;
+        }
+        int texCoordType3 = formatBits >> 0x1a & 1;
+        int positionType2 = formatBits >> 0x16 & 1;
+
+        int offset = 0;
+        //Position
+        arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("position", 3 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, 0));
+        offset = 0xc;
+
+        switch(normalType){
+            case 1:
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("vs_normal", 3 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
+                offset += 0xc;
+                break;
+            case 2:
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("vs_normal", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
+                offset+= 4;
+                break;
+        }
+        switch(tangentType) {
+            case 1:
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("tangent", 3 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
+                offset += 0xc;
+                break;
+            case 2:
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("tangent", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+                offset += 4;
+                break;
+        }
+        switch(tangentType2){
+            case 1:
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("bitangent", 3 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
+                offset += 0xc;
+                break;
+            case 2:
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("bitangent", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+                offset += 4;
+                break;
+        }
+
+        if (colorType != 0) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("color", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
+            defines.put("LAYER0_COLORSET", 1);
+            offset += 4;
+        } else {
+            defines.put("LAYER0_COLORSET", 0);
+        }
+
+        if ((formatBits & 0x600) != 0) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("color2", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
+            offset +=  4;
+        }
+
+        if (texCoordFlag1 != 0) {
+            for (int i = 0; i < Math.min(texCoordFlag1, 4); i++) {
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("vs_uv" + i, 4 * 2, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT2, offset));
+                offset +=  8;
+            }
+        } else {
+            for (int i = 0; i < Math.min(texCoordFlag2, 4); i++) {
+                arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("vs_uv" + i, 2 * 2, VertexArrayBinding.VertexArrayAttribute.Type.HALF_FLOAT2, offset));
+                offset +=  4;
+            }
+        }
+        if (blendWeight == 1) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("transparency", 2 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT2, offset));
+            offset = offset + 8;
+        } else if (blendWeight == 2) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("transparency", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            offset = offset + 4;
+        }
+
+        if (blendIndices == 1) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("blendIndices", 4 * 3, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
+            offset = offset + 0xc;
+        } else if (blendIndices == 2) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("blendIndices", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            offset = offset + 4;
+        }
+
+        if (texCoordType3 != 0) {
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("lightDir", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            offset = offset + 4;
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("lightColor", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            offset += 4;
+        }
+        if(positionType2 == 1){
+
+        }
+        formats.put(formatBits,arrayFormat);
     }
 
     public void generateFormat() {
@@ -159,7 +309,7 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
             arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("tangent", 3 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
             offset = offset + 0xc;
         } else if (tangentType == 2) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("tangent", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("tangent", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
             offset = offset + 4;
         }
 
@@ -167,12 +317,12 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
             arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("bitangent", 3 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
             offset = offset + 0xc;
         } else if (tangentType2 == 2) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("bitangent", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("bitangent", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
             offset = offset + 4;
         }
 
         if (colorFlag1 != 0) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("color", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("color", 4, VertexArrayBinding.VertexArrayAttribute.Type.D3DCOLOR, offset));
             defines.put("LAYER0_COLORSET", 1);
             offset = offset + 4;
         } else {
@@ -180,7 +330,7 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
 
         }
         if ((formatBits & 0x600) != 0) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("color2", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("color2", 4, VertexArrayBinding.VertexArrayAttribute.Type.D3DCOLOR, offset));
             offset = offset + 4;
         }
 
@@ -195,12 +345,13 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
                 offset = offset + 4;
             }
         }
+        //this.color = getColor((formatBits));
 
         if (local_1c == 1) {
             arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("transparency", 2 * 4, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT2, offset));
             offset = offset + 8;
         } else if (local_1c == 2) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("transparency", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("transparency", 4, VertexArrayBinding.VertexArrayAttribute.Type.D3DCOLOR, offset));
             offset = offset + 4;
         }
 
@@ -208,14 +359,14 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
             arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("blendIndices", 4 * 3, VertexArrayBinding.VertexArrayAttribute.Type.FLOAT3, offset));
             offset = offset + 0xc;
         } else if (local_24 == 2) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("blendIndices", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("blendIndices", 4, VertexArrayBinding.VertexArrayAttribute.Type.D3DCOLOR, offset));
             offset = offset + 4;
         }
 
         if (local_c != 0) {
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("lightDir", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("lightDir", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
             offset = offset + 4;
-            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("lightColor", 4, VertexArrayBinding.VertexArrayAttribute.Type.BYTE, offset));
+            arrayFormat.add(new VertexArrayBinding.VertexArrayAttribute("lightColor", 4, VertexArrayBinding.VertexArrayAttribute.Type.UNSIGNED_BYTE, offset));
         }
     }
 
@@ -318,7 +469,14 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         defines.put("REFRACTION_STAGE", 0);
         defines.put("COMBINE_OP_0", isLayerEnabled(0) ? 1 : 0);
         defines.put("LAYER0_DIFFUSEENABLE", hasDiffuseMap(0) ? 0 : 1);
+        defines.put("LAYER1_DIFFUSEENABLE", 0);
+        defines.put("COMBINE_OP_1", 0);
 
+
+        if(isLayerEnabled(1)) {
+            defines.put("COMBINE_OP_1", (int) combineOp1);
+            defines.put("LAYER1_DIFFUSEENABLE", layer1DiffuseTex == null ? 0 : 1);
+        }
         if ((shaderDefinesBits & 0x1000) == 0) {
             if ((shaderDefinesBits >> 0x11 & 1) != 0) {
                 defines.put("LIGHTING_STAGE", 1); //gooch
@@ -411,6 +569,7 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
                 }
             }
         }
+        //defines.put("LIGHTING_STAGE", isLayerEnabled(1) ? 10 : isLayerEnabled(2) ? 11 : isLayerEnabled(3) ? 12 : 13);
     }
 
     private boolean isLayerEnabled(int layer){
@@ -440,6 +599,9 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         if (this.getTexture() != null)
             ShaderController.setUniform("layer0_sampler", this.getTexture());
 
+        if (this.getLayer1Texture() != null)
+            ShaderController.setUniform("layer1_sampler", this.getLayer1Texture());
+
         if (this.getNormalTexture() != null)
             ShaderController.setUniform("surface_sampler", this.getNormalTexture());
 
@@ -452,6 +614,10 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         ShaderController.setUniform("specular_params", specular);
         for (var define : this.getDefines().entrySet()) {
             ShaderController.setUniform(define.getKey(), define.getValue());
+        }
+        for (int i = 0; i < 4; i++) {
+            //System.out.println(this.uvOffset[i].toString());
+            ShaderController.setUniform("uvOffset"+i, this.uvOffset[i]);
         }
     }
 
@@ -466,6 +632,49 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         }
 
         return false;
+    }
+
+    public void updateUVSet(float delta){
+        //private byte uvOffAnimType;
+        //private int uvOffAnimEnabled;
+        //private float uvOffAnimParam1;
+        //private float getUvOffAnimParam2;
+        sineTime+=delta;
+        for (int i = 0; i < 4; i++) {
+            if (uvOffAnimEnabled[i] != -1) {
+                float newXOff = uvOffset[i].x;
+                float newYOff = uvOffset[i].y;
+                switch (uvOffAnimTypeX[i]) {
+                    case 2:
+                        newXOff = newXOff + delta * timeInputDeltaStep[i].x;
+                        newXOff = newXOff - (float) Math.floor(newXOff);
+                        break;
+                    case 3:
+                        newXOff = (float) (Math.sin((sineTime * 2 * Math.PI * timeInputDeltaStep[i].x)) * trigScaling[i].x);
+                        break;
+                    case 4:
+                        newXOff = (float) (Math.cos((sineTime * 2 * Math.PI * timeInputDeltaStep[i].x)) * trigScaling[i].x);
+                        break;
+                    default:
+                        newXOff = 0;
+                }
+                switch (uvOffAnimTypeY[i]) {
+                    case 2:
+                        newYOff = newYOff + delta * timeInputDeltaStep[i].y;
+                        newYOff = newYOff - (float) Math.floor(newYOff);
+                        break;
+                    case 3:
+                        newYOff = (float) (Math.sin((sineTime * 2 * Math.PI * timeInputDeltaStep[i].y)) * trigScaling[i].y);
+                        break;
+                    case 4:
+                        newYOff = (float) (Math.cos((sineTime * 2 * Math.PI * timeInputDeltaStep[i].y)) * trigScaling[i].y);
+                        break;
+                    default:
+                        newYOff = 0;
+                }
+                uvOffset[i] = new Vector2f(newXOff, newYOff);
+            }
+        }
     }
 
     public void setFormatBits(int formatBits) {
@@ -498,6 +707,10 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         this.fileDiffuse = diffuseFileTexture;
     }
 
+    public void setLayer1DiffuseTexture(FileTexture diffuseFileTexture) {
+        this.layer1DiffuseTex = diffuseFileTexture;
+    }
+
     public FileTexture getNormalFileTexture() {
         return this.fileNormal;
     }
@@ -514,6 +727,12 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         if (fileDiffuse == null) return null;
 
         return fileDiffuse.nativeTexture().getNow(null);
+    }
+
+    public Texture getLayer1Texture() {
+        if (layer1DiffuseTex == null) return null;
+
+        return layer1DiffuseTex.nativeTexture().getNow(null);
     }
 
     public Texture getSpecularTexture() {
@@ -714,5 +933,39 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
     @Override
     public int hashCode() {
         return this.fileAddress;
+    }
+
+    public byte getCombineOp1() {
+        return combineOp1;
+    }
+
+    public void setCombineOp1(byte combineOp1) {
+        this.combineOp1 = combineOp1 == -1 ? 0 :combineOp1;
+    }
+    public void setUvOffAnimTypeX(int index,byte uvOffAnimType) {
+        this.uvOffAnimTypeX[index] = uvOffAnimType;
+    }
+    public void setUvOffAnimTypeY(int index,byte uvOffAnimType) {
+        this.uvOffAnimTypeY[index] = uvOffAnimType;
+    }
+
+    public void setUvOffAnimEnabled(int index,int uvOffAnimEnabled) {
+        this.uvOffAnimEnabled[index] = uvOffAnimEnabled;
+    }
+
+    public void setUvOffAnimParam1(float uvOffAnimParam1) {
+        this.uvOffAnimParam1 = uvOffAnimParam1;
+    }
+
+    public void setTimeInputDeltaStep(int index,Vector2f in) {
+        this.timeInputDeltaStep[index] = in;
+    }
+    public void setTrigScaling(int index, Vector2f in) {
+        this.trigScaling[index] = in;
+    }
+
+    public static Vector4f getColor(int hash){
+        Random random = new Random(hash);
+        return new Vector4f(random.nextFloat(),random.nextFloat(),random.nextFloat(),1);
     }
 }

@@ -734,7 +734,14 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         MapWriter.applyChangesToMapState();
         TCSHookManager.update();
         DiscordManager.update();
-
+        if(EditorState.getActiveMap() != null) {
+            var materials = ((NU2MapData) EditorState.getActiveMap().levelData()).scene().materials();
+            materials.forEach((e,a)->a.updateUVSet(delta));
+        }
+        if(BrickBench.CURRENT.currentThings != null) {
+            var materials = BrickBench.CURRENT.currentThings.scene().materials();
+            materials.forEach((e,a)->a.updateUVSet(delta));
+        }
         ingamePosition = player.getPosition().multiply(-1, 1, 1);
 
         if (recorded) {
