@@ -2,7 +2,9 @@ package com.opengg.loader.game.nu2.terrain;
 
 import com.opengg.core.engine.Resource;
 import com.opengg.core.math.Vector3f;
+import com.opengg.core.render.Renderable;
 import com.opengg.core.render.SceneRenderUnit;
+import com.opengg.core.render.internal.opengl.OpenGLRenderer;
 import com.opengg.core.render.objects.DrawnObject;
 import com.opengg.core.render.objects.TextureRenderable;
 import com.opengg.core.render.texture.Texture;
@@ -10,6 +12,7 @@ import com.opengg.core.system.Allocator;
 import com.opengg.loader.components.EditorEntityRenderComponent;
 
 public class InfiniteWallComponent extends EditorEntityRenderComponent {
+    private static Texture wallt;
     public InfiniteWallComponent(InfiniteWall wall) {
         super(wall, new SceneRenderUnit.UnitProperties().shaderPipeline("infwall"));
 
@@ -26,9 +29,15 @@ public class InfiniteWallComponent extends EditorEntityRenderComponent {
         }
 
         newMesh.flip();
+        if(wallt == null){
+            wallt = Texture.create(Texture.config().wrapType(Texture.WrapType.REPEAT).minimumFilter(Texture.FilterType.NEAREST), Resource.getTextureData("wall.png"));
+        }
 
-        this.setRenderable(new TextureRenderable(DrawnObject.create(newMesh).setRenderType(DrawnObject.DrawType.LINE_STRIP),
-                Texture.create(Texture.config().wrapType(Texture.WrapType.REPEAT), Resource.getTextureData("wall.png"))));
+        Renderable render = new TextureRenderable(DrawnObject.create(newMesh).setRenderType(DrawnObject.DrawType.LINE_STRIP),wallt);
+        this.setRenderable(() -> {
+            OpenGLRenderer.getOpenGLRenderer().setBackfaceCulling(false);
+            render.render();
+        });
         this.setUpdateEnabled(false);
     }
 }

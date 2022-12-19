@@ -76,6 +76,7 @@ public class MapInterface extends JFrame implements KeyListener {
 
         centerTabs.addChangeListener(e -> {
             OpenGG.enableRendering(centerTabs.getSelectedComponent() == scenePane);
+            OpenGG.setTargetUpdateTime(centerTabs.getSelectedComponent() == scenePane ? 0 : 0.0333f);
         });
 
         bottomTabs = createPrimaryTabPane();
