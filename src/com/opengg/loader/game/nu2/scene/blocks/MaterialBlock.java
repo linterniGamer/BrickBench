@@ -5,6 +5,8 @@ import com.opengg.core.math.Vector4f;
 import com.opengg.loader.Util;
 import com.opengg.loader.game.nu2.NU2MapData;
 import com.opengg.loader.game.nu2.scene.FileMaterial;
+import com.opengg.loader.game.nu2.scene.FileMaterial.UVAnimType;
+import com.opengg.loader.game.nu2.scene.FileMaterial.UVAnimationProperties;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -94,35 +96,48 @@ public class MaterialBlock extends DefaultFileBlock {
             material.generateShaderSettings();
 
             for (int j = 0; j < 4; j++) {
-                fileBuffer.position(ptr+0x204+j*20);
-                var xScrollSpeed = fileBuffer.getFloat();
-                var yScrollSpeed = fileBuffer.getFloat();
-                material.setTimeInputDeltaStep(j,new Vector2f(xScrollSpeed,yScrollSpeed));
-                fileBuffer.position(ptr+0x204-0x8+j*20);
+                fileBuffer.position(ptr + 0x1c0 + j * 4);
+                var animEnabled = fileBuffer.getInt();
+                
+                fileBuffer.position(ptr + 0x1F8 + j * 20);
+                var animTypeX = switch (fileBuffer.get()) {
+                    case 2 -> UVAnimType.LINEAR;
+                    case 3 -> UVAnimType.SINE;
+                    case 4 -> UVAnimType.COSINE;
+                    default -> UVAnimType.OFF;
+                };
+                var animTypeY = switch (fileBuffer.get()) {
+                    case 2 -> UVAnimType.LINEAR;
+                    case 3 -> UVAnimType.SINE;
+                    case 4 -> UVAnimType.COSINE;
+                    default -> UVAnimType.OFF;
+                };
+                fileBuffer.get();
+                fileBuffer.get();
+
                 var xTrigScale = fileBuffer.getFloat();
                 var yTrigScale = fileBuffer.getFloat();
-                material.setTrigScaling(j,new Vector2f(xTrigScale,yTrigScale));
-                fileBuffer.position(ptr+0x1c0+j*4);
-                var animEnabled = fileBuffer.getInt();
-                material.setUvOffAnimEnabled(j,animEnabled);
-                fileBuffer.position(ptr+0x204-0xc+j*20);
-                var animTypeX = fileBuffer.get();
-                var animTypeY = fileBuffer.get();
-                material.setUvOffAnimTypeX(j,animTypeX);
-                material.setUvOffAnimTypeY(j,animTypeY);
-                material.setUvOffAnimParam1(0);
-                if(animTypeX > 2 || animTypeY > 2){
-                    System.out.println("wacky: " + i + ",," + j + " | " + animTypeX + "," + animTypeY + "," + xTrigScale + "," + yTrigScale + "," + xScrollSpeed + "," + yScrollSpeed);
-                }
+                var xScrollSpeed = fileBuffer.getFloat();
+                var yScrollSpeed = fileBuffer.getFloat();
+                
+                material.setUVAnimationProperties(j, 
+                    new UVAnimationProperties(
+                        j,
+                        animEnabled != -1,
+                        animTypeX,
+                        animTypeY,
+                        xScrollSpeed,
+                        xTrigScale,
+                        yScrollSpeed,
+                        yTrigScale)
+                );
             }
-            //System.out.println(test1+","+test2+","+test3+","+(int)test4 + " | " + Integer.toHexString(ptr+0x1c0));
 
             if(isLayerEnabled(1,shaderDefines)){
                 fileBuffer.position(ptr + 0x74);
                 var t1 = fileBuffer.getShort();
                 var t2 = fileBuffer.getShort();
                 var t3 = fileBuffer.getShort();
-                System.out.println(ptr+","+t1+","+layer1TexID + "," + combineop1);
             }else{
                 fileBuffer.position(ptr + 0x74);
                 var t1 = fileBuffer.getShort();

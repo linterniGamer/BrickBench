@@ -166,9 +166,9 @@ public class SceneExporter {
     public static void exportTexture(FileTexture texture, Path path) {
         try {
             Files.createDirectories(path.getParent());
-            FileOutputStream fs = new FileOutputStream(path.toFile());
-            fs.getChannel().write(texture.contents());
-            fs.close();
+            try (FileOutputStream fs = new FileOutputStream(path.toFile())) {
+                fs.getChannel().write(texture.contents());
+            }
         } catch (IOException e) {
             SwingUtil.showErrorAlert("Failed to export texture " + path, e);
         }

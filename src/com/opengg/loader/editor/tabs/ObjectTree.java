@@ -39,7 +39,7 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
             "Render/GenericCommand",
             "Render/Lightmaps",
             "Render/Meshes",
-            //"Render/Lights",
+            // "Render/Lights",
             "Render/Transforms");
 
     private String lastSearch = "";
@@ -83,19 +83,21 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
     @Override
     public void paint(Graphics g) {
         super.paint(g);
-        if (tree.getRowCount() < 1) return;
+        if (tree.getRowCount() < 1)
+            return;
         rowHeight = tree.getRowHeight();
 
         Rectangle vis = this.getVisibleRect();
         g.setColor(tree.getBackground());
-        //g.setColor(getBackground());
+        // g.setColor(getBackground());
         g.fillRect(vis.x, vis.y, toggleWidth, vis.height);
 
         int start = tree.getClosestRowForLocation(vis.x, vis.y);
         int end = tree.getClosestRowForLocation(vis.x, vis.y + vis.height + rowHeight);
         int yOff = tree.getRowBounds(start).y;
         for (int i = start; i <= end; i++) {
-            if (((DefaultMutableTreeNode) tree.getPathForRow(i).getLastPathComponent()).getUserObject() instanceof VisibilityToggleNode node) {
+            if (((DefaultMutableTreeNode) tree.getPathForRow(i).getLastPathComponent())
+                    .getUserObject() instanceof VisibilityToggleNode node) {
                 if (forceRectBot != -1 && i <= forceRectBot && i >= forceRectTop) {
                     if (!forceType) {
                         invisSVG.paintIcon(this, g, 0, yOff);
@@ -116,14 +118,16 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
     public void mouseClicked(MouseEvent e) {
         Point p = e.getPoint();
         if (p.x > 0 && p.x < toggleWidth) {
-            var node = ((DefaultMutableTreeNode) tree.getClosestPathForLocation(e.getX(), e.getY()).getLastPathComponent());
+            var node = ((DefaultMutableTreeNode) tree.getClosestPathForLocation(e.getX(), e.getY())
+                    .getLastPathComponent());
             if (node.getUserObject() instanceof VisibilityToggleNode vn) {
                 var newVis = !vn.isVisible;
                 forceType = newVis;
                 forceRectTop = forceRectBot = -1;
                 if (node.getChildCount() != 0) {
                     forceRectTop = tree.getClosestRowForLocation(e.getX(), e.getY());
-                    forceRectBot = tree.getRowForPath(tree.getClosestPathForLocation(e.getX(), e.getY()).pathByAddingChild(node.getChildAt(node.getChildCount() - 1)));
+                    forceRectBot = tree.getRowForPath(tree.getClosestPathForLocation(e.getX(), e.getY())
+                            .pathByAddingChild(node.getChildAt(node.getChildCount() - 1)));
                 }
 
                 setNodeVisibility(node, newVis);
@@ -135,16 +139,15 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
         var nodes = path.split("/");
         var root = (DefaultMutableTreeNode) tree.getModel().getRoot();
 
-        top:
-        for (var node : nodes) {
-            for (var e = root.children(); e.hasMoreElements(); ) {
+        top: for (var node : nodes) {
+            for (var e = root.children(); e.hasMoreElements();) {
                 var next = e.nextElement();
                 if (next.toString().equalsIgnoreCase(node)) {
                     root = (DefaultMutableTreeNode) next;
                     continue top;
                 }
             }
-            return null; //Failed to find
+            return null; // Failed to find
         }
 
         return root;
@@ -157,43 +160,33 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
         }
     }
 
-    private void setNodeVisibility(DefaultMutableTreeNode node, boolean visibility) {
-        propagate(node, visibility);
-        this.repaint();
-    }
-
     public void toggleAll(boolean visible) {
         var root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+        setNodeVisibility(root, visible);
+    }
 
-        for (int i = 0; i < root.getChildCount(); i++) {
-            var child = root.getChildAt(i);
-            propagate((DefaultMutableTreeNode) child, visible);
+    private void setNodeVisibility(DefaultMutableTreeNode node, boolean visibility) {
+        for (var subNode : node.preorderEnumeration().asIterator()) {
+            applyVisibilityToNode(subNode, visibility);
         }
-
         this.repaint();
     }
 
     private String getFullPath(DefaultMutableTreeNode node) {
         StringBuilder path = new StringBuilder();
 
-        if (node.getUserObject() instanceof EditorEntityNode mon) {
-            path.append(mon.object.name());
-        } else if (node.getUserObject() instanceof TreeCategory cg) {
-            path.append(cg.name);
+        for (var parent : node.getPath()) {
+            path.append("/").append(switch (node.getUserObject()) {
+                case EditorEntityNode mon -> mon.object.name();
+                case TreeCategory cg -> cg.name;
+                default -> throw new UnsupportedOperationException();
+            });
         }
 
-        var parent = (DefaultMutableTreeNode) node.getParent();
-        while (!parent.isRoot()) {
-            var object = (TreeCategory) parent.getUserObject();
-            path.insert(0, object.name + "/");
-
-            parent = (DefaultMutableTreeNode) parent.getParent();
-        }
-
-        return path.toString();
+        return path.toString().substring(1);
     }
 
-    private void propagate(DefaultMutableTreeNode node, boolean visible) {
+    private void applyVisibilityToNode(DefaultMutableTreeNode node, boolean visible) {
         ((VisibilityToggleNode) node.getUserObject()).isVisible = visible;
         var path = getFullPath(node);
 
@@ -201,10 +194,6 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
 
         var components = WorldEngine.findEverywhereByName(path);
         components.forEach(c -> c.setEnabled(visible));
-
-        for (int i = 0; i < node.getChildCount(); i++) {
-            propagate((DefaultMutableTreeNode) node.getChildAt(i), visible);
-        }
     }
 
     @Override
@@ -230,6 +219,52 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
         refresh(lastSearch);
     }
 
+    public DefaultMutableTreeNode createTree(Map<String, EditorEntity<?>> namespace) {
+        var root = new DefaultMutableTreeNode(new TreeCategory("Objects"));
+        var nodes = new LinkedHashMap<String, DefaultMutableTreeNode>();
+
+        for (var item : namespace.entrySet()) {
+            if (ignore.stream().anyMatch(i -> item.getKey().contains(i))) {
+                continue;
+            }
+
+            var path = item.getValue().path().substring(0, item.getValue().path().lastIndexOf('/'));
+            var pathItems = List.of(path.split("/"));
+            for (int i = 0; i < pathItems.size(); i++) {
+                var pathSoFar = String.join("/", pathItems.subList(0, i + 1));
+                var needsToAdd = !nodes.containsKey(pathSoFar);
+
+                if (needsToAdd) {
+                    var intermediateIcon = EditorIcons.objectTreeIconMap.getOrDefault(pathItems.get(i), null);
+                    ;
+                    var intermediateNode = intermediateIcon == null
+                            ? new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i)))
+                            : new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i), intermediateIcon));
+
+                    ((TreeCategory) intermediateNode.getUserObject()).isVisible = EditorState.CURRENT.objectVisibilities
+                            .getOrDefault(pathSoFar, true);
+
+                    if (i == 0) {
+                        root.add(intermediateNode);
+                    } else {
+                        var parentPath = String.join("/", pathItems.subList(0, i));
+                        nodes.get(parentPath).add(intermediateNode);
+                    }
+                    nodes.put(pathSoFar, intermediateNode);
+                }
+            }
+
+            var nodeObject = new EditorEntityNode(item.getValue());
+            var node = new DefaultMutableTreeNode(nodeObject);
+
+            nodes.get(path).add(node);
+            nodes.put(item.getKey(), node);
+        }
+
+    }
+
+    public DefaultMutableTreeNode applySearchVisibility(DefaultMutableTreeNode root, String searchItem, )
+
     public void refresh(String searchTerm) {
         this.remove(tree);
         var root = new DefaultMutableTreeNode(new TreeCategory("Objects"));
@@ -252,7 +287,8 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
                     if ((property instanceof EditorEntity.StringProperty ||
                             property instanceof EditorEntity.EnumProperty ||
                             property instanceof EditorEntity.EditorEntityProperty) &&
-                            property.stringValue().toLowerCase(Locale.ROOT).contains(searchTerm.toLowerCase(Locale.ROOT))) {
+                            property.stringValue().toLowerCase(Locale.ROOT)
+                                    .contains(searchTerm.toLowerCase(Locale.ROOT))) {
                         found = true;
                         break;
                     }
@@ -270,12 +306,14 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
                 var needsToAdd = !nodes.containsKey(pathSoFar);
 
                 if (needsToAdd) {
-                    var intermediateIcon = EditorIcons.objectTreeIconMap.getOrDefault(pathItems.get(i), null); ;
-                    var intermediateNode = intermediateIcon == null ?
-                            new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i))) :
-                            new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i), intermediateIcon));
+                    var intermediateIcon = EditorIcons.objectTreeIconMap.getOrDefault(pathItems.get(i), null);
+                    ;
+                    var intermediateNode = intermediateIcon == null
+                            ? new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i)))
+                            : new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i), intermediateIcon));
 
-                    ((TreeCategory) intermediateNode.getUserObject()).isVisible = EditorState.CURRENT.objectVisibilities.getOrDefault(pathSoFar, true);
+                    ((TreeCategory) intermediateNode.getUserObject()).isVisible = EditorState.CURRENT.objectVisibilities
+                            .getOrDefault(pathSoFar, true);
 
                     if (i == 0) {
                         root.add(intermediateNode);
@@ -294,7 +332,6 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
             nodes.get(path).add(node);
             nodes.put(item.getKey(), node);
         }
-
 
         tree = new JTree(root);
         tree.setRootVisible(false);
@@ -358,7 +395,8 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
 
     public static class EditorEntityNodeRenderer extends IconNodeRenderer {
         @Override
-        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+        public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded,
+                boolean leaf, int row, boolean hasFocus) {
             super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
             var node = (DefaultMutableTreeNode) value;
 

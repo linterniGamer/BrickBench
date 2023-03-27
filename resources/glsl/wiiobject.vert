@@ -105,22 +105,22 @@ void main() {
     }
 
     if(SURFACE_UVSET == 0){
-        normalCoord = vs_uv0+uvOffset0;
+        normalCoord = vs_uv0 + uvOffset0;
     }else if(SURFACE_UVSET == 1){
-        normalCoord = vs_uv1+uvOffset1;
+        normalCoord = vs_uv1 + uvOffset1;
     }else if(SURFACE_UVSET == 2){
-        normalCoord = vs_uv2+uvOffset2;
+        normalCoord = vs_uv2 + uvOffset2;
     }else if(SURFACE_UVSET == 3){
-        normalCoord = vs_uv3+uvOffset3;
+        normalCoord = vs_uv3 + uvOffset3;
     }
     
     if(SPECULAR_UVSET == 0){
-        specularCoord = vs_uv0+uvOffset0;
+        specularCoord = vs_uv0 + uvOffset0;
     }else if(SPECULAR_UVSET == 1){
-        specularCoord = vs_uv1+uvOffset1;
+        specularCoord = vs_uv1 + uvOffset1;
     }else if(SPECULAR_UVSET == 2){
-        specularCoord = vs_uv2+uvOffset2;
+        specularCoord = vs_uv2 + uvOffset2;
     }else if(SPECULAR_UVSET == 3){
-        specularCoord = vs_uv3+uvOffset3;
+        specularCoord = vs_uv3 + uvOffset3;
     }
 }

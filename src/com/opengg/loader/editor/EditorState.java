@@ -31,38 +31,34 @@ public class EditorState {
     private Map<String, Project.MapInstance> loadedMaps = new HashMap<>();
     private Map<String, Tuple.OrderedTuple<Vector3f, Quaternionf>> savedPlayerPositions = new HashMap<>();
 
-    private EditorEntity.Ref<?> selectedObject = EditorEntity.Ref.NULL; 
+    private EditorEntity.Ref<?> selectedObject = EditorEntity.Ref.NULL;
     public Map<String, Boolean> objectVisibilities = new LinkedHashMap<>();
     public List<Component> temporaryComponents = new ArrayList<>();
 
     public boolean shouldHighlight;
+    public boolean shouldRunAnims = true;
     public MapInterface.SelectionMode selectionMode = MapInterface.SelectionMode.PAN;
     public TerrainGroup.TerrainProperty property = TerrainGroup.TerrainProperty.NONE;
 
     public List<Consumer<Project>> onProjectChangeListeners = new ArrayList<>();
     public List<Consumer<Project>> onMapChangeListeners = new ArrayList<>();
     public List<Consumer<Project>> onMapReloadListeners = new ArrayList<>();
-    private List<Consumer<Tuple<Project, EditorEntity.Ref<?>>>> onObjectSelectListeners  = new ArrayList<>();
-    private List<Consumer<Tuple<String, Boolean>>> onVisibilityChangeListeners  = new ArrayList<>();
+    private List<Consumer<Tuple<Project, EditorEntity.Ref<?>>>> onObjectSelectListeners = new ArrayList<>();
+    private List<Consumer<Tuple<String, Boolean>>> onVisibilityChangeListeners = new ArrayList<>();
 
     /**
      * Clears the editor state
      */
     public static void resetEditorState() {
         CURRENT.selectionStack.clear();
-        CURRENT.selectedObject = EditorEntity.Ref.NULL; 
+        CURRENT.selectedObject = EditorEntity.Ref.NULL;
         CURRENT.objectVisibilities.clear();
         CURRENT.savedPlayerPositions.clear();
-        CURRENT.namespaces.clear();
-        CURRENT.project = null;
-
-        for (var map : List.copyOf(CURRENT.loadedMaps.values())) {
-            closeProjectMap(map.levelData().xmlData());
-        }
     }
 
     /**
      * Returns the currently active project
+     * 
      * @return
      */
     public static Project getProject() {
@@ -70,19 +66,20 @@ public class EditorState {
     }
 
     /**
-     * Updates the current project with the newly added project and resets the editor state.
+     * Updates the current project with the newly added project and resets the
+     * editor state.
+     * 
      * @param project
      */
     public static void updateProject(Project project) {
         CURRENT.project = project;
         var allLists = List.of(
                 CURRENT.project.structure().getNodesOfType(Area.class),
-                CURRENT.project.maps()
-        );
+                CURRENT.project.maps());
 
         var namespace = new HashMap<String, EditorEntity<?>>();
-        for(var list : allLists){
-            for(var obj : list){
+        for (var list : allLists) {
+            for (var obj : list) {
                 namespace.put(obj.path(), obj);
             }
         }
@@ -93,6 +90,7 @@ public class EditorState {
 
     /**
      * Returns a loaded MapInstance by name
+     * 
      * @param name The map name for the instance
      * @return
      */
@@ -100,10 +98,15 @@ public class EditorState {
         return CURRENT.loadedMaps.get(name);
     }
 
+    public static List<Project.MapInstance> getAllMaps() {
+        return List.copyOf(CURRENT.loadedMaps.values());
+    }
+
     /**
      * Add the given map instance to be managed by the state manager
+     * 
      * @param instance The instance to manage
-     */ 
+     */
     public static void addMapInstance(Project.MapInstance instance) {
         CURRENT.namespaces.put(instance.levelData().xmlData().name(), new HashMap<>());
         CURRENT.loadedMaps.put(instance.levelData().xmlData().name(), instance);
@@ -112,6 +115,7 @@ public class EditorState {
     /**
      * Returns the currently active map
      * This corresponds to the map currently loaded as a MapComponent in the engine
+     * 
      * @return
      */
     public static Project.MapInstance getActiveMap() {
@@ -120,6 +124,7 @@ public class EditorState {
 
     /**
      * Sets the given map as the active map
+     * 
      * @param map
      */
     public static void updateMap(Project.MapInstance map) {
@@ -128,7 +133,8 @@ public class EditorState {
     }
 
     /**
-     * Regenerates engine components after changes have been applied to the current map state
+     * Regenerates engine components after changes have been applied to the current
+     * map state
      */
     public static void recreateEngineStateFromChanges(MapWriter.WritableObject writtenType) {
         try {
@@ -143,6 +149,7 @@ public class EditorState {
 
     /**
      * Closes the active map and sets the new active map to null
+     * 
      * @see EditorState#closeProjectMap(MapXml)
      */
     public static void closeActiveMap() {
@@ -153,21 +160,25 @@ public class EditorState {
 
     /**
      * Creates a map instance from the given project map if non-null
+     * 
      * @param map Project map from the given project to use
      * @throws IOException
      */
     public static void addProjectMap(MapXml map) throws IOException {
-        if(map != null) {
+        if (map != null) {
             updateMap(MapLoader.loadMapFromXml(CURRENT.project, map));
         }
     }
 
     /**
-     * Creates a map instance from the given project map if non-null, and sets it as the active map
+     * Creates a map instance from the given project map if non-null, and sets it as
+     * the active map
+     * 
      * @param map Project map from the given project to use
-     * @return The newly created map instance, or null if either map is null or an error happened while loading the map
+     * @return The newly created map instance, or null if either map is null or an
+     *         error happened while loading the map
      */
-    public static Project.MapInstance addAndActivateProjectMap(MapXml map){
+    public static Project.MapInstance addAndActivateProjectMap(MapXml map) {
         closeActiveMap();
         selectObject(null);
 
@@ -175,9 +186,11 @@ public class EditorState {
             try {
                 addProjectMap(map);
                 CURRENT.currentMapName = map.name();
-                WorldEngine.getCurrent().findByName("mainView").get(0).attach(EditorState.getActiveMap().levelData().createEngineComponent());
+                WorldEngine.getCurrent().findByName("mainView").get(0)
+                        .attach(EditorState.getActiveMap().levelData().createEngineComponent());
 
-                var oldPos = CURRENT.savedPlayerPositions.getOrDefault(map.name(), new Tuple.OrderedTuple<>(new Vector3f(), new Quaternionf()));
+                var oldPos = CURRENT.savedPlayerPositions.getOrDefault(map.name(),
+                        new Tuple.OrderedTuple<>(new Vector3f(), new Quaternionf()));
                 BrickBench.CURRENT.player.setPositionOffset(oldPos.x().multiply(new Vector3f(-1, 1, 1)));
                 BrickBench.CURRENT.player.setRotationOffset(oldPos.y());
 
@@ -192,14 +205,26 @@ public class EditorState {
     }
 
     /**
-     * Closes the {@link com.opengg.loader.Project.MapInstance MapInstance} of the given project map
-     * This deletes the instance, removes the map namespaces, and clears the active map if the given project map corresponds
+     * Closes all maps associated with the given project.
+     */
+    public static void closeProjectMaps(Project project) {
+        if (project != null)
+            project.structure().getNodesOfType(MapXml.class).forEach(xml -> closeProjectMap(xml));
+    }
+
+    /**
+     * Closes the {@link com.opengg.loader.Project.MapInstance MapInstance} of the
+     * given project map
+     * This deletes the instance, removes the map namespaces, and clears the active
+     * map if the given project map corresponds
      * to the current {@link EditorState#getActiveMap() active map}.
+     * 
      * @param map
      */
     public static void closeProjectMap(MapXml map) {
         CURRENT.namespaces.remove(map.name());
-        CURRENT.savedPlayerPositions.put(map.name(), new Tuple.OrderedTuple<>(BrickBench.CURRENT.ingamePosition, BrickBench.CURRENT.player.getRotation()));
+        CURRENT.savedPlayerPositions.put(map.name(),
+                new Tuple.OrderedTuple<>(BrickBench.CURRENT.ingamePosition, BrickBench.CURRENT.player.getRotation()));
         var instance = CURRENT.loadedMaps.remove(map.name());
 
         if (instance.levelData().xmlData().name().equals(CURRENT.currentMapName)) {
@@ -212,9 +237,13 @@ public class EditorState {
 
     /**
      * Returns the contents of a namespace.
-     * Namespaces contain the {@link EditorEntity EditorEntities} of a given structure
-     * @param name The namespace name. This can be either the name of a project map or Project (accesses project entities)
-     * @return The values of the given namespace, or an empty map if the namespace does not exist
+     * Namespaces contain the {@link EditorEntity EditorEntities} of a given
+     * structure
+     * 
+     * @param name The namespace name. This can be either the name of a project map
+     *             or Project (accesses project entities)
+     * @return The values of the given namespace, or an empty map if the namespace
+     *         does not exist
      */
     public static Map<String, EditorEntity<?>> getNamespace(String name) {
         return CURRENT.namespaces.getOrDefault(name, new HashMap<>());
@@ -222,8 +251,10 @@ public class EditorState {
 
     /**
      * Returns the namespace name corresponding to the current active namespace
-     * This namespace name is equivalent to the name of the current {@link EditorState#getActiveMap() active map instance},
+     * This namespace name is equivalent to the name of the current
+     * {@link EditorState#getActiveMap() active map instance},
      * or empty if no instance is active
+     * 
      * @return
      */
     public static String getActiveNamespace() {
@@ -237,6 +268,7 @@ public class EditorState {
     /**
      * Returns an object given its path and namespace
      * If either the namespace or the path do not exist, returns null.
+     * 
      * @param namespace
      * @param path
      * @return
@@ -247,11 +279,15 @@ public class EditorState {
 
     /**
      * Returns an object given its path.
-     * The path consists of an optional namespace part and a path, separated by semicolons (eg <code>Negotiations_A:Render/Models/Model_1</code>).
+     * The path consists of an optional namespace part and a path, separated by
+     * semicolons (eg <code>Negotiations_A:Render/Models/Model_1</code>).
      *
      * The path can be resolved in two ways:
-     * - If a namespace is explicitly provided, it will find the object by path in that namespace
-     * - If no namespace is provided, the namespaces is assumed to be the  {@link EditorState#getActiveNamespace() currently active namespace}
+     * - If a namespace is explicitly provided, it will find the object by path in
+     * that namespace
+     * - If no namespace is provided, the namespaces is assumed to be the
+     * {@link EditorState#getActiveNamespace() currently active namespace}
+     * 
      * @param path Path to search object in
      * @return
      */
@@ -266,7 +302,9 @@ public class EditorState {
 
     /**
      * Selects a temporary object.
-     * This adds the object to the <code>Temporary</code> namespace, which gets cleared after another object is selected
+     * This adds the object to the <code>Temporary</code> namespace, which gets
+     * cleared after another object is selected
+     * 
      * @param tempObject
      */
     public static <T extends EditorEntity<T>> EditorEntity.Ref<T> selectTemporaryObject(EditorEntity<T> tempObject) {
@@ -276,26 +314,31 @@ public class EditorState {
 
     /**
      * Selects an object
-     * This method selects the given object and creates a reference through default namespace resolution rules:
-     * - If a namespace is provided through {@link EditorEntity#namespace()}, it is used
+     * This method selects the given object and creates a reference through default
+     * namespace resolution rules:
+     * - If a namespace is provided through {@link EditorEntity#namespace()}, it is
+     * used
      * - Otherwise, the current namespace is used
+     * 
      * @param mapObject
      * @param <T>
      * @return
      */
-    public static <T extends EditorEntity<T>> EditorEntity.Ref<T>  selectObject(EditorEntity<T> mapObject) {
+    public static <T extends EditorEntity<T>> EditorEntity.Ref<T> selectObject(EditorEntity<T> mapObject) {
         return selectObject("", mapObject);
     }
 
     /**
      * Selects an object with an explicit namespace for future accesses.
      * This method selects the given object from the explicitly given namespace.
+     * 
      * @param namespace Namespace t
      * @param mapObject
      * @param <T>
      * @return
      */
-    public static <T extends EditorEntity<T>> EditorEntity.Ref<T>  selectObject(String namespace, EditorEntity<T> mapObject) {
+    public static <T extends EditorEntity<T>> EditorEntity.Ref<T> selectObject(String namespace,
+            EditorEntity<T> mapObject) {
         if (!namespace.equals("Temporary")) {
             getNamespace("Temporary").clear();
         }
@@ -319,6 +362,7 @@ public class EditorState {
 
     /**
      * Returns a reference to the currently selected {@link EditorEntity}
+     * 
      * @return
      */
     public static EditorEntity.Ref<?> getSelectedObject() {
@@ -326,9 +370,11 @@ public class EditorState {
     }
 
     private static void addToSelectionStack(String selection) {
-        if (selection.equals(CURRENT.selectionStack.peekLast())) return;
+        if (selection.equals(CURRENT.selectionStack.peekLast()))
+            return;
 
-        if (!selection.isEmpty()) CURRENT.selectionStack.add(selection);
+        if (!selection.isEmpty())
+            CURRENT.selectionStack.add(selection);
 
         var nextRedoSelection = CURRENT.futureSelectionStack.peekLast();
         if (selection.equals(nextRedoSelection)) {
@@ -356,6 +402,7 @@ public class EditorState {
 
     /**
      * Returns if the editor has an item that it can undo selection to
+     * 
      * @return
      */
     public static boolean hasAvailablePreviousSelection() {
@@ -364,10 +411,12 @@ public class EditorState {
 
     /**
      * Undoes the current selection
-     * This goes back to the last item that is still accessible and pushes the current item to the redo stack
+     * This goes back to the last item that is still accessible and pushes the
+     * current item to the redo stack
      */
     public static void undoSelection() {
-        if (CURRENT.selectionStack.size() <= 1) return;
+        if (CURRENT.selectionStack.size() <= 1)
+            return;
         CURRENT.futureSelectionStack.addLast(CURRENT.selectionStack.pollLast());
         while (!CURRENT.selectionStack.isEmpty()) {
             var selection = CURRENT.selectionStack.pollLast();
@@ -397,22 +446,25 @@ public class EditorState {
     }
 
     /**
-     * Add a listener that triggers whenever the project changes (including to null).
+     * Add a listener that triggers whenever the project changes (including to
+     * null).
      */
     public static void addProjectChangeListener(Consumer<Project> listener) {
         CURRENT.onProjectChangeListeners.add(listener);
     }
 
     /**
-     * Add a listener that triggers whenever the map changes to a new map (including to null).
+     * Add a listener that triggers whenever the map changes to a new map (including
+     * to null).
      */
     public static void addMapChangeListener(Consumer<Project> listener) {
         CURRENT.onMapChangeListeners.add(listener);
     }
 
     /**
-     * Add a listener that triggers whenever the map state is changed, both on new maps and on existing maps.
-     * This does not include when a map changes to a null map. 
+     * Add a listener that triggers whenever the map state is changed, both on new
+     * maps and on existing maps.
+     * This does not include when a map changes to a null map.
      */
     public static void addMapReloadListener(Consumer<Project> listener) {
         CURRENT.onMapReloadListeners.add(listener);
@@ -440,7 +492,8 @@ public class EditorState {
     }
 
     /**
-     * Sets the visibility of the given path node, including both objects and branches.
+     * Sets the visibility of the given path node, including both objects and
+     * branches.
      */
     public static void setNodeVisibility(String node, boolean visibility) {
         CURRENT.objectVisibilities.put(node, visibility);
@@ -450,14 +503,14 @@ public class EditorState {
     /**
      * Returns if a node is currently visible.
      */
-    public static boolean isNodeVisible(String node){
+    public static boolean isNodeVisible(String node) {
         return CURRENT.objectVisibilities.getOrDefault(node, true);
     }
 
     /**
      * Returns if an object is currently visible.
      */
-    public static boolean isObjectVisible(EditorEntity<?> object){
+    public static boolean isObjectVisible(EditorEntity<?> object) {
         return isNodeVisible(object.path());
     }
 

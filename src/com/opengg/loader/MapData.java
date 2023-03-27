@@ -39,6 +39,12 @@ public interface MapData {
      */
     Map<String, EditorEntity<?>> getNamespace();
 
+
+    /**
+     * Update any continuous map state (texture animations, etc)
+     */
+    default void update(float delta) {}
+
     /**
      * Nicer cast.
      */

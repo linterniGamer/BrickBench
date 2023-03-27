@@ -26,7 +26,8 @@ class ButtonRow extends JToolBar {
         var lighting = new JToggleButton(EditorIcons.light);
         var labels = new JToggleButton(EditorIcons.messages);
         var highlight = new JToggleButton(EditorIcons.highlight);
-
+        var anims = new JToggleButton(EditorIcons.highlight);
+        
         var mapOptions = new JComboBox<>();
         mapOptions.setBorder(new EmptyBorder(0, 0, 0, 0));
         mapOptions.addActionListener(a -> {
@@ -54,6 +55,8 @@ class ButtonRow extends JToolBar {
         this.add(labels);
         this.add(Box.createRigidArea(new Dimension(0, 5)));
         this.add(highlight);
+        this.add(Box.createRigidArea(new Dimension(0, 5)));
+        this.add(anims);
         this.addSeparator();
         this.add(previousButton);
         this.add(nextButton);
@@ -101,6 +104,10 @@ class ButtonRow extends JToolBar {
             Configuration.getConfigFile("editor.ini").writeConfig("highlight-selected", String.valueOf(highlight.isSelected()));
             BrickBench.CURRENT.reloadConfigFileData();
         });
+
+        panButton.setToolTipText("Enable continuous animations");
+        panButton.setSelected(EditorState.CURRENT.shouldRunAnims);
+        panButton.addActionListener(a -> EditorState.setSelectionMode(MapInterface.SelectionMode.PAN));
 
         EditorState.addProjectChangeListener(p ->
                 mapOptions.setModel(new DefaultComboBoxModel<>(p.maps().stream().map(MapBoxItem::new).toArray(MapBoxItem[]::new)))

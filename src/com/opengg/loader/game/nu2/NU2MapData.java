@@ -261,6 +261,11 @@ public record NU2MapData(String name,
     }
 
     @Override
+    public void update(float delta) {
+        scene().materials().forEach((e, mat) -> mat.updateUVSet(delta));
+    }
+
+    @Override
     public Map<String, EditorEntity<?>> getNamespace() {
         var namespace = new LinkedHashMap<String, EditorEntity<?>>();
         var allLists = List.of(

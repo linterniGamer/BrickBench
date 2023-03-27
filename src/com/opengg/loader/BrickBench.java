@@ -92,7 +92,8 @@ import static com.opengg.core.io.input.keyboard.Key.*;
 /**
  * An instance of BrickBench
  */
-public class BrickBench extends GGApplication implements KeyboardListener, MouseButtonListener, MouseScrollChangeListener, NativeKeyListener {
+public class BrickBench extends GGApplication
+        implements KeyboardListener, MouseButtonListener, MouseScrollChangeListener, NativeKeyListener {
     /**
      * The current editor version.
      */
@@ -147,8 +148,10 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
 
     private static void testLoad() {
         try {
-            Configuration.load(Path.of(System.getProperty("user.home"), "/Documents/BrickBench Files/config/editor.ini"));
-            Configuration.load(Path.of(System.getProperty("user.home"), "/Documents/BrickBench Files/config/recent.ini"));
+            Configuration
+                    .load(Path.of(System.getProperty("user.home"), "/Documents/BrickBench Files/config/editor.ini"));
+            Configuration
+                    .load(Path.of(System.getProperty("user.home"), "/Documents/BrickBench Files/config/recent.ini"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -168,21 +171,25 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
                 .flatMap(f -> Arrays.stream(Objects.requireNonNull(f.listFiles())))
                 .filter(File::isDirectory)
                 .map(File::toPath).toList();
-/*
-        for(var map : allLevels){
-            try {
-               // System.out.println("Loading " + map.toString());
-                //var mapEnd = MapLoader.loadMap(map);
-               // System.out.println(mapEnd.currentMapInstance().levelData().scene().correctlySizedMeshIndex().get());
-               // if(mapEnd.currentMapInstance().levelData().scene().correctlySizedMeshIndex().get() == -1){
-              //      System.out.println("WZOO");
-                }
-              //  mapEnd.currentMapInstance().dispose();
-            } catch (Exception e) {
-                System.out.println(map.toString() + " CRASHES: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }*/
+        /*
+         * for(var map : allLevels){
+         * try {
+         * // System.out.println("Loading " + map.toString());
+         * //var mapEnd = MapLoader.loadMap(map);
+         * // System.out.println(mapEnd.currentMapInstance().levelData().scene().
+         * correctlySizedMeshIndex().get());
+         * //
+         * if(mapEnd.currentMapInstance().levelData().scene().correctlySizedMeshIndex().
+         * get() == -1){
+         * // System.out.println("WZOO");
+         * }
+         * // mapEnd.currentMapInstance().dispose();
+         * } catch (Exception e) {
+         * System.out.println(map.toString() + " CRASHES: " + e.getMessage());
+         * e.printStackTrace();
+         * }
+         * }
+         */
     }
 
     public static void main(String... args) throws UnsupportedLookAndFeelException, InterruptedException, IOException {
@@ -209,12 +216,18 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
             System.exit(1);
         }
 
-        if (SystemUtil.IS_WINDOWS && Files.exists(Path.of(System.getProperty("java.home")).resolveSibling("resources"))) { //Run modular windows release
+        if (SystemUtil.IS_WINDOWS
+                && Files.exists(Path.of(System.getProperty("java.home")).resolveSibling("resources"))) { // Run modular
+                                                                                                         // windows
+                                                                                                         // release
             Resource.setApplicationDirectory(Path.of(System.getProperty("java.home")).getParent());
             JNativeHookLibraryLocator.setJNativeHookLocator();
-        } else if (SystemUtil.IS_LINUX && Files.exists(Path.of(System.getProperty("java.home")).resolve("resources")))   { //Run modular linux release
+        } else if (SystemUtil.IS_LINUX && Files.exists(Path.of(System.getProperty("java.home")).resolve("resources"))) { // Run
+                                                                                                                         // modular
+                                                                                                                         // linux
+                                                                                                                         // release
             Resource.setApplicationDirectory(Path.of(System.getProperty("java.home")));
-        } else { //Run IntelliJ release
+        } else { // Run IntelliJ release
             Resource.setApplicationDirectory(new File("").getAbsoluteFile().toPath());
         }
 
@@ -232,29 +245,28 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         }
 
         var defaults = Map.ofEntries(
-            Map.entry("sensitivity", "0.5"),
-            Map.entry("laf", "Flat Dark"),
-            Map.entry("fov", "90"),
-            Map.entry("use-backup-lij-vao", "true"),
-            Map.entry("autodelete-ai-pak", "true"),
-            Map.entry("show-shadow-maps", "true"),
-            Map.entry("emulate-zbuffer", "true"),
-            Map.entry("show-vertex-color", "true"),
-            Map.entry("show-vertex-transparency", "true"),
-            Map.entry("emulate-alpha", "true"),
-            Map.entry("show-dynamic-lights", "true"),
-            Map.entry("use-rotation-platform", "true"),
-            Map.entry("show-lights", "true"),
-            Map.entry("cache-textures", "true"),
-            Map.entry("enhanced-graphics", "true"),
-            Map.entry(GameVersion.LSW_TCS.SHORT_NAME + "-hook-executable-name", GameVersion.LSW_TCS.EXECUTABLE),
-            Map.entry(GameVersion.LIJ1.SHORT_NAME + "-hook-executable-name", GameVersion.LIJ1.EXECUTABLE)
-        );
+                Map.entry("sensitivity", "0.5"),
+                Map.entry("laf", "Flat Dark"),
+                Map.entry("fov", "90"),
+                Map.entry("use-backup-lij-vao", "true"),
+                Map.entry("autodelete-ai-pak", "true"),
+                Map.entry("show-shadow-maps", "true"),
+                Map.entry("emulate-zbuffer", "true"),
+                Map.entry("show-vertex-color", "true"),
+                Map.entry("show-vertex-transparency", "true"),
+                Map.entry("emulate-alpha", "true"),
+                Map.entry("show-dynamic-lights", "true"),
+                Map.entry("use-rotation-platform", "true"),
+                Map.entry("show-lights", "true"),
+                Map.entry("cache-textures", "true"),
+                Map.entry("enhanced-graphics", "true"),
+                Map.entry(GameVersion.LSW_TCS.SHORT_NAME + "-hook-executable-name", GameVersion.LSW_TCS.EXECUTABLE),
+                Map.entry(GameVersion.LIJ1.SHORT_NAME + "-hook-executable-name", GameVersion.LIJ1.EXECUTABLE));
 
         try {
-            Configuration.load(Path.of(dataPath.toString() , "config" , "editor.ini"));
-            Configuration.load(Path.of(dataPath.toString() , "config", "recent.ini"));
-            
+            Configuration.load(Path.of(dataPath.toString(), "config", "editor.ini"));
+            Configuration.load(Path.of(dataPath.toString(), "config", "recent.ini"));
+
         } catch (IOException e) {
             ConfigFile file = new ConfigFile("editor.ini", new LinkedHashMap<>());
             Configuration.addConfigFile(file);
@@ -314,7 +326,8 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
 
         var code = 0;
         if (close == OpenGG.EngineCloseType.ERROR) {
-            SwingUtil.showErrorAlert("BrickBench has closed abnormally. Please view the logs and report this to the developers.");
+            SwingUtil.showErrorAlert(
+                    "BrickBench has closed abnormally. Please view the logs and report this to the developers.");
             if (splashScreen.isDisplayable()) {
                 splashScreen.dispose();
             }
@@ -322,7 +335,7 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
             CURRENT.exit();
             code = 1;
         }
-        
+
         if (SystemUtils.IS_OS_LINUX) {
             SwingUtilities.invokeLater(() -> {
                 CURRENT.window.dispose();
@@ -380,14 +393,17 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
     }
 
     private void setupConsole() {
-        GGConsole.addOutputConsumer(new DefaultLoggerOutputConsumer(Level.DEBUG, s -> ConsolePanel.consoleText.append(s + "\n")));
+        GGConsole.addOutputConsumer(
+                new DefaultLoggerOutputConsumer(Level.DEBUG, s -> ConsolePanel.consoleText.append(s + "\n")));
     }
 
     /**
-     * Opens a file chooser to load a map/project, and loads the map/project that results.
+     * Opens a file chooser to load a map/project, and loads the map/project that
+     * results.
      */
     public void openProjectChooser() {
-        FileUtil.openFileDialog(Configuration.getConfigFile("editor.ini").getConfig("home"), FileUtil.LoadType.BOTH, "BrickBench Project/Map", "brickbench", "xml", "gsc", "ter")
+        FileUtil.openFileDialog(Configuration.getConfigFile("editor.ini").getConfig("home"), FileUtil.LoadType.BOTH,
+                "BrickBench Project/Map", "brickbench", "xml", "gsc", "ter")
                 .ifPresent(f -> OpenGG.asyncExec(() -> loadNewProject(f)));
     }
 
@@ -400,7 +416,7 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         FileMaterial.ENABLE_ALPHA_EMULATION = Boolean.parseBoolean(Configuration.get("emulate-alpha"));
         FileMaterial.ENABLE_DEPTH_EMULATION = Boolean.parseBoolean(Configuration.get("emulate-zbuffer"));
         ParallaxComponent.ENABLE_PARALLAX = Boolean.parseBoolean(Configuration.get("emulate-skybox"));
-        
+
         if (Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("compact-mode"))) {
             window.left.setVisible(false);
             window.right.setVisible(false);
@@ -416,13 +432,20 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         window.validate();
 
         OpenGG.asyncExec(() -> {
-            ShaderController.setUniform("globalEnhancedGraphics", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("enhanced-graphics")));
-            ShaderController.setUniform("globalApplyLights", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-lights")));
-            ShaderController.setUniform("globalUseLightmaps", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-shadow-maps")));
-            ShaderController.setUniform("globalUseDynamicLights", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-dynamic-lights")));
-            ShaderController.setUniform("globalUseMeshTransparency", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-vertex-transparency")));
-            ShaderController.setUniform("globalUseVertexColor", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-vertex-color")));
-            ShaderController.setUniform("globalForceLightmapUsage", Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("force-shadow")));
+            ShaderController.setUniform("globalEnhancedGraphics",
+                    Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("enhanced-graphics")));
+            ShaderController.setUniform("globalApplyLights",
+                    Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-lights")));
+            ShaderController.setUniform("globalUseLightmaps",
+                    Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-shadow-maps")));
+            ShaderController.setUniform("globalUseDynamicLights",
+                    Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-dynamic-lights")));
+            ShaderController.setUniform("globalUseMeshTransparency", Boolean
+                    .parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-vertex-transparency")));
+            ShaderController.setUniform("globalUseVertexColor",
+                    Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("show-vertex-color")));
+            ShaderController.setUniform("globalForceLightmapUsage",
+                    Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("force-shadow")));
         });
     }
 
@@ -449,11 +472,11 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         WorldEngine.getCurrent().attach(new WorldObject("mainView"));
         WorldEngine.getCurrent().attach(new WorldObject("meshView").setEnabled(false));
 
-
         player = new PlayerView();
         player.setName("player");
         WorldEngine.getCurrent().attach(player);
-        WorldEngine.getCurrent().attach(new LightComponent(Light.createDirectional(Quaternionf.createXYZ(new Vector3f(0, 0, -0.5f)), new Vector3f(1, 1, 1))));
+        WorldEngine.getCurrent().attach(new LightComponent(
+                Light.createDirectional(Quaternionf.createXYZ(new Vector3f(0, 0, -0.5f)), new Vector3f(1, 1, 1))));
         WorldEngine.getCurrent().attach(TCSHookManager.enemyManager = new HookCharacterManager());
 
         BindController.addBind(ControlType.KEYBOARD, "forward", KEY_W);
@@ -521,12 +544,18 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
     }
 
     /**
-     * Shows a prompt to the user asking if they would like to save the current project before continuing.
-     * @return True if the user decided to either save or not save the current project, and false if the user decided to cancel the current operation.
+     * Shows a prompt to the user asking if they would like to save the current
+     * project before continuing.
+     * 
+     * @return True if the user decided to either save or not save the current
+     *         project, and false if the user decided to cancel the current
+     *         operation.
      */
     public boolean showSaveProjectPrompt() {
         if (EditorState.getProject() != null && EditorState.getProject().isProject()) {
-            var save = JOptionPane.showConfirmDialog(window, "Would you like to save and close your current open project?", "Save?", JOptionPane.YES_NO_CANCEL_OPTION);
+            var save = JOptionPane.showConfirmDialog(window,
+                    "Would you like to save and close your current open project?", "Save?",
+                    JOptionPane.YES_NO_CANCEL_OPTION);
             if (save == 0) {
                 ProjectIO.saveProject(EditorState.getProject(), EditorState.getProject().projectSource());
                 return true;
@@ -544,13 +573,15 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
      *
      */
     public boolean loadNewProject(Path projectFile, boolean saveToRecents) {
-        if (!showSaveProjectPrompt()) return false;
+        if (!showSaveProjectPrompt())
+            return false;
 
         pointsToView.clear();
         TextureManager.clearCache();
 
         WorldEngine.findEverywhereByName("map").forEach(Component::delete);
-        EditorState.closeActiveMap();
+        EditorState.closeProjectMaps(EditorState.getProject());
+        EditorState.resetEditorState();
 
         Project project;
         try {
@@ -563,8 +594,6 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
             SwingUtil.showErrorAlert("Failed to load map/project at " + projectFile, e);
             return false;
         }
-
-        if (project == null) return false;
 
         if (saveToRecents)
             pushRecentMapToList(projectFile);
@@ -579,7 +608,6 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
      * @return
      */
     public boolean useProject(Project project) {
-        EditorState.resetEditorState();
         EditorState.updateProject(project);
         MapXml map = null;
 
@@ -588,7 +616,6 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         } else {
             map = EditorState.getProject().maps().get(0);
             GGConsole.log("Opening project with map " + map.name());
-
         }
 
         return useMapFromCurrentProject(map);
@@ -629,7 +656,8 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
     private void pushRecentMapToList(Path map) {
         var recentFile = Configuration.getConfigFile("recent.ini");
 
-        if (recentFile.getConfig("recent_0").equals(map.toString())) return;
+        if (recentFile.getConfig("recent_0").equals(map.toString()))
+            return;
         int startPoint = IntStream.range(0, RECENT_SAVES)
                 .filter(i -> recentFile.getConfig("recent_" + i).equals(map.toString()))
                 .findFirst().orElse(RECENT_SAVES);
@@ -669,10 +697,12 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
     }
 
     public void importThings() {
-        FileUtil.openFileDialog(Configuration.getConfigFile("editor.ini").getConfig("home"), FileUtil.LoadType.FILE, "THINGS_PC.GSC copy")
+        FileUtil.openFileDialog(Configuration.getConfigFile("editor.ini").getConfig("home"), FileUtil.LoadType.FILE,
+                "THINGS_PC.GSC copy")
                 .ifPresent(v -> OpenGG.asyncExec(() -> {
                     try {
-                        Files.copy(v, Resource.getUserDataPath().resolve("THINGS_PC.GSC"), StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(v, Resource.getUserDataPath().resolve("THINGS_PC.GSC"),
+                                StandardCopyOption.REPLACE_EXISTING);
                         currentThings = MapLoader.loadThings();
                     } catch (IOException e) {
                         SwingUtil.showErrorAlert("Failed to copy THINGS to work directory", e);
@@ -690,9 +720,11 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
             buffer.get(arrayBuffer);
 
             var dbuffer = new DataBufferByte(arrayBuffer, arrayBuffer.length);
-            var raster = Raster.createInterleavedRaster(dbuffer, width, height, 4 * width, 4, new int[]{0, 1, 2, 3}, null);
+            var raster = Raster.createInterleavedRaster(dbuffer, width, height, 4 * width, 4, new int[] { 0, 1, 2, 3 },
+                    null);
 
-            var colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), true, false, Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+            var colorModel = new ComponentColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), true, false,
+                    Transparency.TRANSLUCENT, DataBuffer.TYPE_BYTE);
             var image = new BufferedImage(colorModel, raster, colorModel.isAlphaPremultiplied(), null);
 
             var at = new AffineTransform();
@@ -734,14 +766,11 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         MapWriter.applyChangesToMapState();
         TCSHookManager.update();
         DiscordManager.update();
-        if(EditorState.getActiveMap() != null) {
-            var materials = ((NU2MapData) EditorState.getActiveMap().levelData()).scene().materials();
-            materials.forEach((e,a)->a.updateUVSet(delta));
+
+        if (EditorState.CURRENT.shouldRunAnims) {
+            EditorState.getAllMaps().forEach(m -> m.levelData().update(delta));
         }
-        if(BrickBench.CURRENT.currentThings != null) {
-            var materials = BrickBench.CURRENT.currentThings.scene().materials();
-            materials.forEach((e,a)->a.updateUVSet(delta));
-        }
+
         ingamePosition = player.getPosition().multiply(-1, 1, 1);
 
         if (recorded) {
@@ -752,27 +781,30 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
     }
 
     boolean exited = false;
+
     public void exit() {
-        if (exited) return;
-        if (!showSaveProjectPrompt()) return;
+        if (exited)
+            return;
+        if (!showSaveProjectPrompt())
+            return;
 
         GGConsole.log("Writing config file on exit");
         FileTexture.FileTextureCache.haltIconLoader();
         Configuration.writeFile(Configuration.getConfigFile("editor.ini"));
-        
+
         OpenGG.endApplication();
         exited = true;
     }
 
     public void cleanGameDirectories() {
         var clean = JOptionPane.showOptionDialog(window, "" +
-                        """
-                                Clearing the caches and game files will remove the reference game copies you've imported.
-                                This can help if you have imported a non-clean game on accident.
-                                Do you want to save your work and continue? BrickBench will exit after this operation.
-                                  """,
+                """
+                        Clearing the caches and game files will remove the reference game copies you've imported.
+                        This can help if you have imported a non-clean game on accident.
+                        Do you want to save your work and continue? BrickBench will exit after this operation.
+                          """,
                 "Delete copied game files?",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, new String[]{"Yes", "No"}, "yes");
+                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, new String[] { "Yes", "No" }, "yes");
 
         if (clean == 0) {
             try (var exit = SwingUtil.showLoadingAlert("Clearing...", "Clearing cached files...", false)) {
@@ -793,7 +825,6 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
 
                 var testOutput = Resource.getUserDataPath().resolve("test");
                 FileUtils.deleteDirectory(testOutput.toFile());
-
 
                 JOptionPane.showMessageDialog(window, "Cleaning was successful, BrickBench will now close.");
 
@@ -836,7 +867,8 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
         }
         if (key >= KEY_0 && key <= KEY_9) {
             int index = key == KEY_0 ? 9 : key - KEY_1;
-            if (KeyboardController.isKeyPressed(KEY_LEFT_CONTROL)) index += 10;
+            if (KeyboardController.isKeyPressed(KEY_LEFT_CONTROL))
+                index += 10;
             var toggleName = switch (index) {
                 case 0 -> "AI";
                 case 1 -> "Doors";
@@ -852,11 +884,12 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
 
         if (key == KEY_G) {
             JVectorField vectorField = new JVectorField();
-            Object[] goToPrompt = new Object[]{
+            Object[] goToPrompt = new Object[] {
                     "Position:", vectorField
             };
 
-            int option = JOptionPane.showConfirmDialog(window, goToPrompt, "Go to where?", JOptionPane.OK_CANCEL_OPTION);
+            int option = JOptionPane.showConfirmDialog(window, goToPrompt, "Go to where?",
+                    JOptionPane.OK_CANCEL_OPTION);
             if (option == JOptionPane.OK_OPTION) {
                 WorldEngine.findEverywhereByName("player").get(0)
                         .setPositionOffset(vectorField.getValue());
@@ -865,11 +898,12 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
 
         if (key == KEY_V) {
             JFormattedTextField vInput = new JFormattedTextField(0.0f);
-            Object[] goToPrompt = new Object[]{
+            Object[] goToPrompt = new Object[] {
                     "New velocity: ", vInput
             };
 
-            int option = JOptionPane.showConfirmDialog(window, goToPrompt, "Set velocity", JOptionPane.OK_CANCEL_OPTION);
+            int option = JOptionPane.showConfirmDialog(window, goToPrompt, "Set velocity",
+                    JOptionPane.OK_CANCEL_OPTION);
             if (option == JOptionPane.OK_OPTION) {
                 player.setSpeed(Float.parseFloat(vInput.getText()));
             }
@@ -916,7 +950,8 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
             }
         }
 
-        if ((nativeEvent.getKeyCode() == NativeKeyEvent.VC_F12 || nativeEvent.getKeyCode() == NativeKeyEvent.VC_BACK_SLASH) && TCSHookManager.currentHook != null) {
+        if ((nativeEvent.getKeyCode() == NativeKeyEvent.VC_F12
+                || nativeEvent.getKeyCode() == NativeKeyEvent.VC_BACK_SLASH) && TCSHookManager.currentHook != null) {
             TCSHookManager.panel.loadCurrentMap();
         }
     }
@@ -932,7 +967,8 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
     public void onButtonPress(int button) {
         lastLeftClick = System.currentTimeMillis();
 
-        if (button == MouseButton.MIDDLE || button == MouseButton.RIGHT || (button == MouseButton.LEFT && EditorState.CURRENT.selectionMode == MapInterface.SelectionMode.PAN)) {
+        if (button == MouseButton.MIDDLE || button == MouseButton.RIGHT || (button == MouseButton.LEFT
+                && EditorState.CURRENT.selectionMode == MapInterface.SelectionMode.PAN)) {
             player.setUsingMouse(true);
             WindowController.getWindow().setCursorLock(true);
         } else if (button == MouseButton.LEFT) {
@@ -960,7 +996,6 @@ public class BrickBench extends GGApplication implements KeyboardListener, Mouse
             }
         }
     }
-
 
     private class MapLoadFileHandler extends TransferHandler {
         public int getSourceActions(JComponent c) {
