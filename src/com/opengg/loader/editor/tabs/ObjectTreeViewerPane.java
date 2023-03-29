@@ -49,19 +49,19 @@ public class ObjectTreeViewerPane extends JPanel implements EditorTab {
             @Override
             public void insertUpdate(DocumentEvent e) {
                 if (EditorState.getActiveMap() == null) return;
-                tree.refresh(search.getText());
+                Thread.startVirtualThread(() -> tree.filterExistingTree(search.getText()));
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
                 if (EditorState.getActiveMap() == null) return;
-                tree.refresh(search.getText());
+                Thread.startVirtualThread(() -> tree.filterExistingTree(search.getText()));
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
                 if (EditorState.getActiveMap() == null) return;
-                tree.refresh(search.getText());
+                Thread.startVirtualThread(() -> tree.filterExistingTree(search.getText()));
             }
         });
 

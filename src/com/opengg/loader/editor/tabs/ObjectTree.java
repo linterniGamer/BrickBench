@@ -5,6 +5,7 @@ import com.formdev.flatlaf.icons.*;
 import com.opengg.core.world.WorldEngine;
 import com.opengg.loader.BrickBench;
 import com.opengg.loader.EditorEntity;
+import com.opengg.loader.Util;
 import com.opengg.loader.editor.EditorIcons;
 import com.opengg.loader.editor.EditorState;
 import com.opengg.loader.editor.EditorTheme;
@@ -18,6 +19,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class ObjectTree extends JPanel implements MouseListener, Scrollable {
     int rowHeight = 0;
@@ -29,6 +31,7 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
     private static final FlatSVGIcon eyeSVG = EditorIcons.visibleEye.derive(toggleWidth, 20);
     private static final FlatSVGIcon invisSVG = EditorIcons.invisibleEye.derive(toggleWidth, 20);
     private static Color disableColor;
+    private static DefaultMutableTreeNode fullTree;
     private JTree tree;
 
     private List<String> ignore = List.of(
@@ -42,13 +45,15 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
             // "Render/Lights",
             "Render/Transforms");
 
-    private String lastSearch = "";
-
     public ObjectTree() {
         this.setLayout(new BorderLayout());
 
-        var root = new DefaultMutableTreeNode(new TreeCategory("Objects"));
-        tree = new JTree(root);
+        fullTree = new DefaultMutableTreeNode(new TreeCategory("Objects"));
+        tree = new JTree(fullTree);
+        tree.setRootVisible(false);
+        tree.setShowsRootHandles(true);
+        tree.setRowHeight(24);
+        tree.setCellRenderer(new EditorEntityNodeRenderer());
         this.add(tree, BorderLayout.CENTER);
 
         JPanel panel = new JPanel();
@@ -60,8 +65,12 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
 
         rowHeight = tree.getRowHeight();
 
-        EditorState.addMapChangeListener(m -> this.clearTreeFilterSearch());
-        EditorState.addMapReloadListener(m -> this.refresh());
+        EditorState.addMapChangeListener(m ->
+            Thread.startVirtualThread(() -> 
+                this.clearTreeFilterSearch()));
+        EditorState.addMapReloadListener(m -> 
+            Thread.startVirtualThread(() -> 
+                this.makeNewTree(EditorState.getNamespace(EditorState.getActiveNamespace()))));
         EditorState.addVisibilityChangeListener(c -> this.setNodeVisibility(c.x(), c.y()));
     }
 
@@ -135,7 +144,7 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
         }
     }
 
-    public DefaultMutableTreeNode getNodeForPath(String path) {
+    public Optional<DefaultMutableTreeNode> getNodeForPath(String path) {
         var nodes = path.split("/");
         var root = (DefaultMutableTreeNode) tree.getModel().getRoot();
 
@@ -147,17 +156,14 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
                     continue top;
                 }
             }
-            return null; // Failed to find
+            return Optional.empty(); // Failed to find
         }
 
-        return root;
+        return Optional.of(root);
     }
 
     public void setNodeVisibility(String node, boolean visibility) {
-        var realNode = getNodeForPath(node);
-        if (realNode != null) {
-            setNodeVisibility(realNode, visibility);
-        }
+        getNodeForPath(node).ifPresent(n -> setNodeVisibility(n, visibility));
     }
 
     public void toggleAll(boolean visible) {
@@ -166,9 +172,7 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
     }
 
     private void setNodeVisibility(DefaultMutableTreeNode node, boolean visibility) {
-        for (var subNode : node.preorderEnumeration().asIterator()) {
-            applyVisibilityToNode(subNode, visibility);
-        }
+        node.preorderEnumeration().asIterator().forEachRemaining(sub -> applyVisibilityToNode((DefaultMutableTreeNode) sub, visibility));
         this.repaint();
     }
 
@@ -176,11 +180,13 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
         StringBuilder path = new StringBuilder();
 
         for (var parent : node.getPath()) {
-            path.append("/").append(switch (node.getUserObject()) {
-                case EditorEntityNode mon -> mon.object.name();
-                case TreeCategory cg -> cg.name;
-                default -> throw new UnsupportedOperationException();
-            });
+            if (parent.getParent() != null) {
+                path.append("/").append(switch (((DefaultMutableTreeNode) parent).getUserObject()) {
+                    case EditorEntityNode mon -> mon.object.name();
+                    case TreeCategory cg -> cg.name;
+                    default -> throw new UnsupportedOperationException();
+                });
+            }
         }
 
         return path.toString().substring(1);
@@ -189,7 +195,6 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
     private void applyVisibilityToNode(DefaultMutableTreeNode node, boolean visible) {
         ((VisibilityToggleNode) node.getUserObject()).isVisible = visible;
         var path = getFullPath(node);
-
         EditorState.CURRENT.objectVisibilities.put(path, visible);
 
         var components = WorldEngine.findEverywhereByName(path);
@@ -215,11 +220,52 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
 
     }
 
-    public void refresh() {
-        refresh(lastSearch);
+    public void makeNewTree(Map<String, EditorEntity<?>> namespace) {
+        fullTree = createRootNode(namespace);
+        SwingUtilities.invokeLater(() -> createTree(fullTree));
     }
 
-    public DefaultMutableTreeNode createTree(Map<String, EditorEntity<?>> namespace) {
+    public void filterExistingTree(String searchItem) {
+        if (searchItem.trim().isEmpty()) {
+            SwingUtilities.invokeLater(() -> createTree(fullTree));
+        } else {
+            var newNode = filterTree(fullTree, searchItem);
+            SwingUtilities.invokeLater(() -> createTree(newNode));
+        }
+    }
+
+    private void createTree(DefaultMutableTreeNode node) {
+        this.remove(tree);
+
+        tree = new JTree(node);
+        tree.setRootVisible(false);
+        tree.setShowsRootHandles(true);
+        tree.setRowHeight(24);
+        tree.setCellRenderer(new EditorEntityNodeRenderer());
+
+        JPanel top = this;
+        tree.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                int selRow = tree.getRowForLocation(e.getX(), e.getY());
+                if (selRow != -1) {
+                    var selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+                    if (selectedNode.getUserObject() instanceof ObjectTree.EditorEntityNode mon) {
+                        if (e.getClickCount() == 1) {
+                            EditorState.selectObject(mon.object);
+                        } else if (e.getClickCount() == 2 && mon.object.pos() != null) {
+                            BrickBench.CURRENT.player.setPositionOffset(mon.object.pos().multiply(-1, 1, 1));
+                        }
+                    }
+                }
+                top.repaint();
+            }
+        });
+        this.add(tree, BorderLayout.CENTER);
+        this.repaint();
+        this.validate();
+    }
+
+    private DefaultMutableTreeNode createRootNode(Map<String, EditorEntity<?>> namespace) {
         var root = new DefaultMutableTreeNode(new TreeCategory("Objects"));
         var nodes = new LinkedHashMap<String, DefaultMutableTreeNode>();
 
@@ -236,7 +282,6 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
 
                 if (needsToAdd) {
                     var intermediateIcon = EditorIcons.objectTreeIconMap.getOrDefault(pathItems.get(i), null);
-                    ;
                     var intermediateNode = intermediateIcon == null
                             ? new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i)))
                             : new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i), intermediateIcon));
@@ -261,111 +306,66 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
             nodes.put(item.getKey(), node);
         }
 
+        return root;
     }
 
-    public DefaultMutableTreeNode applySearchVisibility(DefaultMutableTreeNode root, String searchItem, )
+    private Optional<DefaultMutableTreeNode> applySubVisibility(DefaultMutableTreeNode node, String searchItem) {
+        var allGoodChildren = Util.stream(node.children().asIterator())
+            .flatMap(c -> applySubVisibility((DefaultMutableTreeNode) c, searchItem).stream())
+            .toList();
 
-    public void refresh(String searchTerm) {
-        this.remove(tree);
-        var root = new DefaultMutableTreeNode(new TreeCategory("Objects"));
-        var namespace = EditorState.getActiveNamespace();
-        var nodes = new LinkedHashMap<String, DefaultMutableTreeNode>();
-        for (var item : EditorState.getNamespace(namespace).entrySet()) {
-            if (ignore.stream().anyMatch(i -> item.getKey().contains(i))) {
-                continue;
-            }
+        if(!allGoodChildren.isEmpty()) {
+            var nodeCopy = new DefaultMutableTreeNode(node.getUserObject());
+            allGoodChildren.forEach(child -> nodeCopy.add(child));
 
-            boolean isVisible = EditorState.isNodeVisible(item.getKey());
+            return Optional.of(nodeCopy);
+        } else {
+            var userObject = node.getUserObject();
+            var nodeCopy = new DefaultMutableTreeNode(node.getUserObject());
 
-            WorldEngine.findEverywhereByName(item.getKey()).forEach(f -> f.setEnabled(isVisible));
-
-            var found = false;
-            if (item.getValue().path().toLowerCase().contains(searchTerm.toLowerCase(Locale.ROOT))) {
-                found = true;
-            } else {
-                for (var property : item.getValue().properties()) {
-                    if ((property instanceof EditorEntity.StringProperty ||
-                            property instanceof EditorEntity.EnumProperty ||
-                            property instanceof EditorEntity.EditorEntityProperty) &&
-                            property.stringValue().toLowerCase(Locale.ROOT)
-                                    .contains(searchTerm.toLowerCase(Locale.ROOT))) {
-                        found = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!found) {
-                continue;
-            }
-
-            var path = item.getValue().path().substring(0, item.getValue().path().lastIndexOf('/'));
-            var pathItems = List.of(path.split("/"));
-            for (int i = 0; i < pathItems.size(); i++) {
-                var pathSoFar = String.join("/", pathItems.subList(0, i + 1));
-                var needsToAdd = !nodes.containsKey(pathSoFar);
-
-                if (needsToAdd) {
-                    var intermediateIcon = EditorIcons.objectTreeIconMap.getOrDefault(pathItems.get(i), null);
-                    ;
-                    var intermediateNode = intermediateIcon == null
-                            ? new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i)))
-                            : new DefaultMutableTreeNode(new TreeCategory(pathItems.get(i), intermediateIcon));
-
-                    ((TreeCategory) intermediateNode.getUserObject()).isVisible = EditorState.CURRENT.objectVisibilities
-                            .getOrDefault(pathSoFar, true);
-
-                    if (i == 0) {
-                        root.add(intermediateNode);
+            switch (userObject) {
+                case EditorEntityNode entity -> {
+                    if (entity.object.path().toLowerCase().contains(searchItem.toLowerCase(Locale.ROOT))) {
+                        return Optional.of(nodeCopy);
                     } else {
-                        var parentPath = String.join("/", pathItems.subList(0, i));
-                        nodes.get(parentPath).add(intermediateNode);
-                    }
-                    nodes.put(pathSoFar, intermediateNode);
-                }
-            }
-
-            var nodeObject = new EditorEntityNode(item.getValue());
-            nodeObject.isVisible = isVisible;
-            var node = new DefaultMutableTreeNode(nodeObject);
-
-            nodes.get(path).add(node);
-            nodes.put(item.getKey(), node);
-        }
-
-        tree = new JTree(root);
-        tree.setRootVisible(false);
-        tree.setShowsRootHandles(true);
-        tree.setRowHeight(24);
-        tree.setCellRenderer(new EditorEntityNodeRenderer());
-        JPanel top = this;
-        tree.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent e) {
-                int selRow = tree.getRowForLocation(e.getX(), e.getY());
-                if (selRow != -1) {
-                    var selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-                    if (selectedNode.getUserObject() instanceof ObjectTree.EditorEntityNode mon) {
-                        if (e.getClickCount() == 1) {
-                            EditorState.selectObject(namespace, mon.object);
-                        } else if (e.getClickCount() == 2 && mon.object.pos() != null) {
-                            BrickBench.CURRENT.player.setPositionOffset(mon.object.pos().multiply(-1, 1, 1));
+                        for (var property : entity.object.properties()) {
+                            if ((property instanceof EditorEntity.StringProperty ||
+                                    property instanceof EditorEntity.EnumProperty ||
+                                    property instanceof EditorEntity.EditorEntityProperty) &&
+                                    property.stringValue().toLowerCase(Locale.ROOT)
+                                            .contains(searchItem.toLowerCase(Locale.ROOT))) {
+                                return Optional.of(nodeCopy);
+                            }
                         }
                     }
                 }
-                top.repaint();
+                case TreeCategory category -> {
+                    if (category.toString().toLowerCase().contains(searchItem)) {
+                        return Optional.of(nodeCopy);
+                    }
+                }
+                default -> {
+                    return Optional.empty();
+                }
             }
-        });
-        this.add(tree, BorderLayout.CENTER);
-        this.repaint();
-        this.validate();
+            
+            return Optional.empty();
+        }
+    }
 
-        lastSearch = searchTerm;
+    public DefaultMutableTreeNode filterTree(DefaultMutableTreeNode root, String searchItem) {
+        var allGoodChildren = Util.stream(root.children().asIterator())
+            .flatMap(c -> applySubVisibility((DefaultMutableTreeNode) c, searchItem).stream())
+            .toList();
+        
+        var nodeCopy = new DefaultMutableTreeNode(root.getUserObject());
+        allGoodChildren.forEach(child -> nodeCopy.add(child));
+
+        return nodeCopy;
     }
 
     public void clearTreeFilterSearch() {
-        lastSearch = "";
         EditorState.CURRENT.objectVisibilities.clear();
-        refresh(lastSearch);
     }
 
     @Override

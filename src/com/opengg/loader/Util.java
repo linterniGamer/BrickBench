@@ -14,6 +14,8 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * Math and other utilities.
@@ -270,6 +272,28 @@ public class Util {
         };
     }
 
+    /**
+     * Create a stream from an Iterator
+     *
+     * @param <T>
+     * @param it
+     * @return
+     */
+    public static <T> Stream<T> stream(Iterable<T> it) {
+        return StreamSupport.stream(it.spliterator(), false);
+    }
+
+    /**
+     * Create a stream from an iterable
+     *
+     * @param <T>
+     * @param it
+     * @return
+     */
+    public static <T> Stream<T> stream(Iterator<T> it) {
+        return stream(() -> it);
+    }
+    
     /**
      * Return the namespace of an EditorEntity reference.
      *

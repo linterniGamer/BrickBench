@@ -36,7 +36,7 @@ public class EditorState {
     public List<Component> temporaryComponents = new ArrayList<>();
 
     public boolean shouldHighlight;
-    public boolean shouldRunAnims = true;
+    public boolean shouldRunAnimations = true;
     public MapInterface.SelectionMode selectionMode = MapInterface.SelectionMode.PAN;
     public TerrainGroup.TerrainProperty property = TerrainGroup.TerrainProperty.NONE;
 

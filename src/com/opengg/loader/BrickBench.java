@@ -767,7 +767,7 @@ public class BrickBench extends GGApplication
         TCSHookManager.update();
         DiscordManager.update();
 
-        if (EditorState.CURRENT.shouldRunAnims) {
+        if (EditorState.CURRENT.shouldRunAnimations) {
             EditorState.getAllMaps().forEach(m -> m.levelData().update(delta));
         }
 

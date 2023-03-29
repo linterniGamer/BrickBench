@@ -139,7 +139,7 @@ public interface EditorEntity<T extends EditorEntity<T>> {
         }
     }
 
-    record EnumProperty (String name, Enum<?> value, boolean editable) implements Property{
+    record EnumProperty<T extends Enum<T>> (String name, Enum<T> value, boolean editable) implements Property{
         @Override
         public String stringValue() { return value.name(); }
 
@@ -154,11 +154,11 @@ public interface EditorEntity<T extends EditorEntity<T>> {
 
                 dropDown.addActionListener(a -> {
                     var newEnum = Arrays.stream(constants)
-                            .map(c -> (Enum)c)
+                            .map(c -> (Enum<T>) c)
                             .filter(c -> c.toString().equals(dropDown.getSelectedItem()))
                             .findFirst().get();
 
-                    object.applyPropertyEdit(name, new EnumProperty(name,newEnum, true));
+                    object.applyPropertyEdit(name, new EnumProperty<T>(name, newEnum, true));
                 });
             }else{
                 panel.add(new JLabel(stringValue()));

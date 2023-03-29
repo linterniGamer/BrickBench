@@ -729,6 +729,35 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
 
     @Override
     public void applyPropertyEdit(String propName, Property newValue) {
+        if (newValue.name().contains("UV set")) {
+            int index = Integer.parseInt("" + newValue.name().charAt(7));
+            switch (newValue) {
+                case BooleanProperty bp when propName.contains("enabled") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1C0 + index * 4, Util.littleEndian(bp.value() ? 1 : -1));
+                }
+                case EnumProperty ep when propName.contains("U channel type") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1F8 + index * 20, Util.littleEndian(((UVAnimType) ep.value()).toInternalType()));
+                }
+                case FloatProperty fp when propName.contains("U channel speed") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1F8 + index * 20 + 12, Util.littleEndian(fp.value()));
+                }
+                case FloatProperty fp when propName.contains("U channel trig multiplier") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1F8 + index * 20 + 4, Util.littleEndian(fp.value()));
+                }
+                case EnumProperty ep when propName.contains("V channel type") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1F8 + index * 20 + 1, Util.littleEndian(((UVAnimType) ep.value()).toInternalType()));
+                }
+                case FloatProperty fp when propName.contains("V channel speed") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1F8 + index * 20 + 16, Util.littleEndian(fp.value()));
+                }
+                case FloatProperty fp when propName.contains("V channel trig multiplier") -> {
+                    MapWriter.applyPatch(MapWriter.WritableObject.SCENE, this.fileAddress + 0x1F8 + index * 20 + 8, Util.littleEndian(fp.value()));
+                }
+                default -> {}
+            }
+            return;
+        }
+
         switch (newValue) {
             case EditorEntityProperty mp when propName.equals("Diffuse texture") -> {
                 var texture = (FileTexture) mp.value();
@@ -792,7 +821,16 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
     }
 
     public enum UVAnimType {
-        LINEAR, SINE, COSINE, OFF
+        LINEAR, SINE, COSINE, OFF;
+
+        byte toInternalType() {
+            return switch(this) {
+                case OFF -> 1;
+                case LINEAR -> 2;
+                case SINE -> 3;
+                case COSINE -> 4;
+            };
+        }    
     }
 
     public record UVAnimationProperties(int channel, boolean enabled, UVAnimType xType, UVAnimType yType, float xSpeed, float xTrigScale, float ySpeed, float yTrigScale) {
