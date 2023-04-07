@@ -316,6 +316,8 @@ public class BrickBench extends GGApplication
                 .setConfigInUserData(true)
                 .setInitializeSound(false)
                 .setWindowOptions(new WindowOptions()
+                        .setMajorVersion(4)
+                        .setMinorVersion(6)
                         .setType("AWT")
                         .setName("BrickBench")
                         .setWidth(1366)

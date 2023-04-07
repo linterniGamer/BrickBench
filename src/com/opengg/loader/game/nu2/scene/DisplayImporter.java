@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static com.opengg.loader.loading.MapWriter.WritableObject.SCENE;
 
@@ -43,7 +44,7 @@ public class DisplayImporter {
             format = VertexFormat.POS_BI_COLOR_UV;
         }
 
-        if (!((NU2MapData)((NU2MapData)EditorState.getActiveMap().levelData())).scene().vertexBuffersBySize().containsKey(format.size)) {
+        if (!(EditorState.getActiveMap().levelData().<NU2MapData>as().scene().vertexBuffersBySize().containsKey(format.size))) {
             GGConsole.warning("Could not find vertex buffer of the right size when importing " + path + ": This map does not contain a buffer for " + format);
             JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "Could not import model, this map does not yet support custom meshes. \nPlease report this to the developers.");
             return null;
@@ -63,44 +64,71 @@ public class DisplayImporter {
                 .map(m -> path.getParent().resolve(m.mapKdFilename))
                 .collect(Collectors.toList());
 
-        if (!textures.stream()
+        var normalMaps = model.getMaterials().stream()
+                .map(m -> path.getParent().resolve(m.mapNsFilename))
+                .collect(Collectors.toList());
+
+        var specularMaps = model.getMaterials().stream()
+                .map(m -> path.getParent().resolve(m.mapKsFilename))
+                .collect(Collectors.toList());
+        
+        var badTextures = Stream.concat(Stream.concat(textures.stream(), normalMaps.stream()), specularMaps.stream())
                 .filter(Files::isRegularFile)
                 .map(t -> FilenameUtils.removeExtension(t.toString()) + ".dds")
-                .allMatch(t -> Files.exists(Path.of(t)))) {
-            GGConsole.warning("Imported model contained non-DDS images");
+                .filter(t -> !Files.exists(Path.of(t)))
+                .toList();
+
+        if (!badTextures.isEmpty()) {
+            GGConsole.warning("Imported model contained non-DDS images: " + badTextures);
             JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "This model contains non-DDS images, and cannot be loaded");
             return null;
         }
 
         var lastDisplayList = getCustomListOrGenerate();
 
-        var startingIndex = importTextures(textures);
+        var startingTextureIndex = importTextures(textures);
+        GGConsole.log("Imported textures at " + startingTextureIndex);
+        
+        var startingNormalIndex = importTextures(normalMaps);
+        GGConsole.log("Imported normal maps at " + startingNormalIndex);
+        
+        var startingSpecularIndex = importTextures(specularMaps);
+        GGConsole.log("Imported specular maps at " + startingSpecularIndex);
 
-        GGConsole.log("Imported textures at " + startingIndex);
-
-        EditorState.updateMap(MapLoader.reloadIndividualFile("gsc"));
-
-        var materialTypes = textures.stream()
+        var materialTypes = model.getMaterials().stream()
                 .map(t -> useShading ? MaterialWriter.MaterialType.COLOR_PHONG : MaterialWriter.MaterialType.TEXTURE_FLAT)
                 .collect(Collectors.toList());
 
         int currentMaterialIndex = ((NU2MapData)EditorState.getActiveMap().levelData()).scene().materials().size();
-        var materials = MaterialWriter.createMaterials(materialTypes);
+
+        var newMaterials = MaterialWriter.createMaterials(materialTypes);
 
         int textureCounter = 0;
+        int normalCounter = 0;
+        int specularCounter = 0;
+
         var ggMaterialToGSCMaterial = new HashMap<Material, Integer>();
         for (int i = 0; i < model.getMaterials().size(); i++) {
-            var materialAddr = materials.get(i);
+            var newMaterial = newMaterials.get(i);
             var fileMaterial = model.getMaterials().get(i);
-
             if (Files.isRegularFile(textures.get(i))) {
-                MapWriter.applyPatch(SCENE, materialAddr + 0x74, Util.littleEndian((short) (startingIndex + textureCounter)));
-                MapWriter.applyPatch(SCENE, materialAddr + 0xB4 + 0x4, Util.littleEndian((short) (startingIndex + textureCounter)));
+                MapWriter.applyPatch(SCENE, newMaterial.getAddress() + 0x74, Util.littleEndian((short) (startingTextureIndex + textureCounter)));
+                MapWriter.applyPatch(SCENE, newMaterial.getAddress() + 0xB4 + 0x4, Util.littleEndian((int) (startingTextureIndex + textureCounter)));
 
                 textureCounter++;
             }
 
-            MapWriter.applyPatch(SCENE, materialAddr + 0x54, fileMaterial.kd.toLittleEndianByteBuffer());
+            if (Files.isRegularFile(normalMaps.get(i))) {
+                MapWriter.applyPatch(SCENE, newMaterial.getAddress() + 0xB4 + 0x4C, Util.littleEndian((short) (startingNormalIndex + normalCounter)));
+                normalCounter++;
+            }
+            
+            if (Files.isRegularFile(specularMaps.get(i))) {
+                MapWriter.applyPatch(SCENE, newMaterial.getAddress() + 0xB4 + 0x48, Util.littleEndian((short) (startingSpecularIndex + specularCounter)));
+                specularCounter++;
+            }
+
+            MapWriter.applyPatch(SCENE, newMaterial.getAddress() + 0x54, fileMaterial.kd.toLittleEndianByteBuffer());
             ggMaterialToGSCMaterial.put(fileMaterial, currentMaterialIndex + i);
         }
 
@@ -330,6 +358,9 @@ public class DisplayImporter {
 
         int targetAddress = SceneFileWriter.createTextureEntries(texList.size());
         SceneFileWriter.appendTextures(texList, targetAddress);
+
+        EditorState.updateMap(MapLoader.reloadIndividualFile("gsc"));
+        
         return startingTexture;
     }
 

@@ -701,7 +701,8 @@ public class FileMaterial implements DisplayCommandResource<FileMaterial> {
         }
 
         return List.of(
-                new IntegerProperty("Material Index",getID(), false),
+                new IntegerProperty("Material Index", getID(), false),
+                new IntegerProperty("Material Address", this.fileAddress, false),
                 new EnumProperty("Blending type",alphaBlendType, true),
                 new EnumProperty("Depth type",depthType, true),
                 new GroupProperty("Textures & Colors",List.of(

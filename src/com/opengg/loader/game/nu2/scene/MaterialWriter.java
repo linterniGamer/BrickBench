@@ -18,11 +18,13 @@ import java.util.List;
 import static com.opengg.loader.loading.MapWriter.WritableObject.SCENE;
 
 public class MaterialWriter {
-    public static List<Integer> createMaterials(List<MaterialType> newMaterialTypes) throws IOException {
+    public static List<FileMaterial> createMaterials(List<MaterialType> newMaterialTypes) throws IOException {
         var scene = EditorState.getActiveMap().levelData().<NU2MapData>as().scene();
 
         var materials = List.copyOf(scene.materials().values());
-        int lastMaterialAddr = materials.get(materials.size()-1).getAddress() + 0x2C4;
+
+        int lastMaterialIndex = materials.size() - 1;
+        int lastMaterialAddr = materials.get(lastMaterialIndex).getAddress() + 0x2C4;
         int materialCountAddr = scene.blocks().get("MS00").address() + 8;
         int gsnhMaterialCountAddr = scene.blocks().get("GSNH").address() + 8 + 0x10;
         MapWriter.applyPatch(MapWriter.WritableObject.SCENE, materialCountAddr, Util.littleEndian(materials.size() + newMaterialTypes.size()));
@@ -52,7 +54,8 @@ public class MaterialWriter {
 
         createEntriesInGSNH(lastMaterialAddr, newMaterialTypes.size());
 
-        return addresses;
+        return List.copyOf(EditorState.getActiveMap().levelData().<NU2MapData>as().scene().materials().values())
+            .subList(lastMaterialIndex + 1, lastMaterialIndex + 1 + newMaterialTypes.size());
     }
 
     public static void createEntriesInGSNH(int start, int amount) throws IOException {
