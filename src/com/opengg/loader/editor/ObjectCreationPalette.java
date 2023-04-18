@@ -11,6 +11,7 @@ import com.opengg.loader.game.nu2.NU2MapData;
 import com.opengg.loader.loading.MapWriter;
 import com.opengg.loader.game.nu2.ai.AIWriter;
 import com.opengg.loader.game.nu2.gizmo.GizWriter;
+import com.opengg.loader.game.nu2.scene.SplineCreator;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -37,6 +38,9 @@ public class ObjectCreationPalette extends JTree {
                     Map.entry("Tube", () -> select("Gizmo/Tubes/", GizWriter.addNewGizmo("Tube"))),
                     Map.entry("Creature Spawn", () -> select("AI/Creatures/", AIWriter.addAICreature())),
                     Map.entry("Locator Set", () -> select("AI/LocatorSets/", AIWriter.addLocatorSet())),
+                    Map.entry("Spline", () -> {
+                        var splineCreator = SplineCreator.create(c -> {});
+                    }),
                     Map.entry("Model", () -> {
                         var map = (NU2MapData) EditorState.getActiveMap().levelData();
                         var tempMesh = new TemporaryMeshComponent(map.scene().gameModels().get(0));
@@ -44,7 +48,7 @@ public class ObjectCreationPalette extends JTree {
 
                         WorldEngine.getCurrent().attach(tempMesh);
                         EditorState.selectTemporaryObject(tempMesh);
-                        EditorState.CURRENT.temporaryComponents.add(tempMesh);
+                        EditorState.CURRENT.temporaryEditorComponents.add(tempMesh);
                     })));
 
         var tree = this;
@@ -99,6 +103,7 @@ public class ObjectCreationPalette extends JTree {
 
         root.add(ai);
         root.add(gizmos);
+        root.add(new DefaultMutableTreeNode(new TreeCategory("Spline", EditorIcons.spline)));
         root.add(new DefaultMutableTreeNode(new TreeCategory("Model", EditorIcons.objectTreeIconMap.get("Models"))));
 
         return root;

@@ -20,9 +20,9 @@ public record AILocatorSet(String name, List<AILocator> locators, int fileAddres
         }
     }
 
-    void addItem(EditorEntityProperty newItem) {
+    void addItem(AILocator newItem) {
         MapWriter.addSpaceAtLocation(MapWriter.WritableObject.AI_LOCATOR, endAddress, 1);
-        MapWriter.applyPatch(MapWriter.WritableObject.AI_LOCATOR, endAddress, new byte[]{(byte) ((AILocator) newItem.value()).id()});
+        MapWriter.applyPatch(MapWriter.WritableObject.AI_LOCATOR, endAddress, new byte[]{(byte) newItem.id()});
         MapWriter.applyPatch(MapWriter.WritableObject.AI_LOCATOR, fileAddress + 16, Util.littleEndian(locators.size() + 1));
     }
 
@@ -49,7 +49,7 @@ public record AILocatorSet(String name, List<AILocator> locators, int fileAddres
         return List.of(
                 new StringProperty("Name", name(), true, 16),
                 new ListProperty("Locators", locatorProperties,true,
-                        e -> OpenGG.asyncExec(() -> this.addItem((EditorEntityProperty) e)),
+                        e -> OpenGG.asyncExec(() -> this.addItem((AILocator) e)),
                         (e, i) -> OpenGG.asyncExec(() -> this.removeItem(i)),
                         "AI/Locators/")
         );

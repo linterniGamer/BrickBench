@@ -33,7 +33,7 @@ public class EditorState {
 
     private EditorEntity.Ref<?> selectedObject = EditorEntity.Ref.NULL;
     public Map<String, Boolean> objectVisibilities = new LinkedHashMap<>();
-    public List<Component> temporaryComponents = new ArrayList<>();
+    public List<Component> temporaryEditorComponents = new ArrayList<>();
 
     public boolean shouldHighlight;
     public boolean shouldRunAnimations = true;
@@ -226,13 +226,15 @@ public class EditorState {
         CURRENT.savedPlayerPositions.put(map.name(),
                 new Tuple.OrderedTuple<>(BrickBench.CURRENT.ingamePosition, BrickBench.CURRENT.player.getRotation()));
         var instance = CURRENT.loadedMaps.remove(map.name());
+        
+        if (instance != null) {
+            if (instance.levelData().xmlData().name().equals(CURRENT.currentMapName)) {
+                WorldEngine.getCurrent().findByName("map").forEach(Component::delete);
+                CURRENT.currentMapName = "";
+            }
 
-        if (instance.levelData().xmlData().name().equals(CURRENT.currentMapName)) {
-            WorldEngine.getCurrent().findByName("map").forEach(Component::delete);
-            CURRENT.currentMapName = "";
+            instance.dispose();
         }
-
-        instance.dispose();
     }
 
     /**
@@ -308,7 +310,7 @@ public class EditorState {
      * @param tempObject
      */
     public static <T extends EditorEntity<T>> EditorEntity.Ref<T> selectTemporaryObject(EditorEntity<T> tempObject) {
-        CURRENT.namespaces.computeIfAbsent("Temporary", t -> new LinkedHashMap<>()).put(tempObject.path(), tempObject);
+        CURRENT.namespaces.computeIfAbsent("Temporary", t -> new LinkedHashMap<>()).putIfAbsent(tempObject.path(), tempObject);
         return selectObject("Temporary", tempObject);
     }
 
@@ -339,15 +341,25 @@ public class EditorState {
      */
     public static <T extends EditorEntity<T>> EditorEntity.Ref<T> selectObject(String namespace,
             EditorEntity<T> mapObject) {
-        if (!namespace.equals("Temporary")) {
-            getNamespace("Temporary").clear();
+
+        if (CURRENT.selectedObject.exists() && CURRENT.selectedObject.get() != mapObject) {
+            CURRENT.selectedObject.get().getSelectionComponent().ifPresent(Component::delete);
+
+            if (!namespace.equals("Temporary")) {
+                getNamespace("Temporary").clear();
+            }
         }
 
-        CURRENT.temporaryComponents.forEach(Component::delete);
-        CURRENT.temporaryComponents.clear();
+        CURRENT.temporaryEditorComponents.forEach(Component::delete);
+        CURRENT.temporaryEditorComponents.clear();
+
         CURRENT.selectedObject = Optional.ofNullable(mapObject)
                 .map(m -> new EditorEntity.Ref(namespace, mapObject))
                 .orElse(EditorEntity.Ref.NULL);
+
+        if (mapObject != null) {
+            mapObject.getSelectionComponent().ifPresent(obj -> WorldEngine.getCurrent().attach(obj));
+        }
 
         if (!CURRENT.selectedObject.path().isEmpty()) {
             addToSelectionStack(CURRENT.selectedObject.namespace() + ":" + CURRENT.selectedObject.path());

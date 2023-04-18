@@ -12,17 +12,21 @@ import com.opengg.loader.EditorEntity;
  * can be easily retrieved with {@code WorldEngine.getAllByName(entity.path())}.
  */
 public class EditorEntityRenderComponent extends RenderComponent {
-    private EditorEntity<?> mapObject;
-
     public EditorEntityRenderComponent(EditorEntity<?> object, SceneRenderUnit.UnitProperties unitProperties) {
+        this(object.path(), unitProperties);
+    }
+
+    public EditorEntityRenderComponent(String path, SceneRenderUnit.UnitProperties unitProperties) {
         super(unitProperties);
-        this.mapObject = object;
-        this.setName(mapObject.path());
+        this.setName(path);
     }
 
     public EditorEntityRenderComponent(EditorEntity<?> object, Renderable renderable, SceneRenderUnit.UnitProperties unitProperties) {
+        this(object.path(), renderable, unitProperties);
+    }
+    
+    public EditorEntityRenderComponent(String path, Renderable renderable, SceneRenderUnit.UnitProperties unitProperties) {
         super(renderable, unitProperties);
-        this.mapObject = object;
-        this.setName(mapObject.path());
+        this.setName(path);
     }
 }

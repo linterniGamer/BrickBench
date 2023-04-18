@@ -1,7 +1,6 @@
 package com.opengg.loader.editor.components;
 
 import com.opengg.loader.EditorEntity;
-import com.opengg.loader.editor.EditorIcons;
 import com.opengg.loader.editor.SearchableListPanel;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -32,13 +31,12 @@ public class ListPropertyComponent extends JPanel {
 
                 addButton.addActionListener(e -> {
                     //Case where you want to generate a dummy
-                    if(prop.newValueFunc() != null) {
-                        var newItem = prop.newValueFunc().apply(prop.value());
-                        prop.addValueFunc().accept(newItem);
+                    if(prop.createValueFunc() != null) {
+                        prop.createValueFunc().run();
                     }else{
                         JPopupMenu menu = new JPopupMenu();
                         var searchPanel = new SearchableListPanel(prop.editSource(), c -> {
-                            prop.addValueFunc().accept(new EditorEntity.EditorEntityProperty(c.name(), c, true, true,prop.editSource()));
+                            prop.addValueFunc().accept(c);
                             menu.setVisible(false);
                         }, false);
 

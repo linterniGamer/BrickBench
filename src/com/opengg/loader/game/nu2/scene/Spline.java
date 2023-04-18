@@ -2,9 +2,13 @@ package com.opengg.loader.game.nu2.scene;
 
 import com.opengg.core.math.Vector3f;
 import com.opengg.loader.MapEntity;
+import com.opengg.loader.editor.EditorState;
 import com.opengg.loader.loading.MapWriter;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -17,6 +21,34 @@ public record Spline(String name, List<Vector3f> points, int address) implements
     @Override
     public String path() {
         return "Splines/" + name;
+    }
+    
+    public void applySplineContentsEdits(SplineCreator.SplineContents editorContents) {
+        if (points.size() != editorContents.values().size()) {
+
+        }
+
+        System.out.println(editorContents);
+
+        var newBuffer = ByteBuffer.allocate(editorContents.values().size() * 3 * 12);
+
+        for (var value : editorContents.values()) {
+            newBuffer.put(value.toLittleEndianByteBuffer());
+        }
+
+        newBuffer.flip();
+
+        MapWriter.applyPatch(MapWriter.WritableObject.SCENE, address + 8, newBuffer);
+        EditorState.selectObject(this);
+    }
+
+    @Override
+    public Map<String, Runnable> getButtonActions() {
+        return Map.of(
+            "Edit spline", () -> SplineCreator.create(
+                new SplineCreator.SplineContents(SplineCreator.SplineType.RAW_SPLINE, points, points.size()),
+                this::applySplineContentsEdits)
+        );
     }
 
     @Override
@@ -39,7 +71,7 @@ public record Spline(String name, List<Vector3f> points, int address) implements
                 new IntegerProperty("Vertex count", points.size(), false),
                 new ListProperty("Vertices",
                         IntStream.range(0, points.size())
-                                .mapToObj(p -> new VectorProperty(Integer.toString(p), points.get(p), true, true))
+                                .mapToObj(p -> new VectorProperty(Integer.toString(p), points.get(p), true, false))
                                 .collect(Collectors.toList()), false)
         );
     }

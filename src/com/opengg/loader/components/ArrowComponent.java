@@ -12,12 +12,10 @@ import com.opengg.core.render.SceneRenderUnit;
 import com.opengg.core.render.internal.opengl.OpenGLRenderer;
 import com.opengg.core.render.objects.ObjectCreator;
 import com.opengg.core.render.objects.TextureRenderable;
-import com.opengg.core.render.shader.ShaderController;
 import com.opengg.core.render.texture.Texture;
 import com.opengg.core.render.window.WindowController;
 import com.opengg.core.world.components.RenderComponent;
 import com.opengg.loader.BrickBench;
-import com.opengg.loader.Project;
 import com.opengg.loader.editor.EditorState;
 
 import java.awt.*;
@@ -131,8 +129,8 @@ public class ArrowComponent extends RenderComponent implements MouseButtonListen
     }
 
     @Override
-    public void finalizeComponent() {
-        super.finalizeComponent();
+    public void onComponentRemoved() {
+        super.onComponentRemoved();
         MouseController.removeButtonListener(this);
     }
 

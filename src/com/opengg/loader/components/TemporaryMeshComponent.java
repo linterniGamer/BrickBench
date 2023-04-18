@@ -24,11 +24,9 @@ public class TemporaryMeshComponent extends EditorEntityRenderComponent implemen
     private boolean makeTerrain;
 
     public TemporaryMeshComponent(GameModel model) {
-        super(model, new SceneRenderUnit.UnitProperties().shaderPipeline("ttNormal"));
+        super("TemporaryModel_" + UUID.randomUUID(), new SceneRenderUnit.UnitProperties().shaderPipeline("ttNormal"));
 
         currentModel = model;
-
-        this.setName("TemporaryModel_" + UUID.randomUUID());
     }
 
     private void cancel() {

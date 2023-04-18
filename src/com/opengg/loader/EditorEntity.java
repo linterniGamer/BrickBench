@@ -7,6 +7,7 @@ import com.opengg.core.engine.OpenGG;
 import com.opengg.core.math.Vector3f;
 import com.opengg.core.world.WorldEngine;
 import com.opengg.loader.components.ArrowComponent;
+import com.opengg.loader.components.EditorEntityRenderComponent;
 import com.opengg.loader.editor.EditorState;
 import com.opengg.loader.editor.SearchableListPanel;
 import com.opengg.loader.editor.components.FileSelectField;
@@ -30,9 +31,9 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -90,6 +91,8 @@ public interface EditorEntity<T extends EditorEntity<T>> {
      */
     @JsonIgnore
     default Map<String, Runnable> getButtonActions(){ return Map.of(); }
+
+    default Optional<EditorEntityRenderComponent> getSelectionComponent() { return Optional.empty(); }
 
     /**
      * Applies a property edit to the given property. This will pass in a new property with the changes
@@ -256,7 +259,7 @@ public interface EditorEntity<T extends EditorEntity<T>> {
                                 vecPanel::setValue)
                                 .setPositionOffset(value());
                         WorldEngine.getCurrent().attach(arrow);
-                        EditorState.CURRENT.temporaryComponents.add(arrow);
+                        EditorState.CURRENT.temporaryEditorComponents.add(arrow);
                     });
                 }
                 panel.add(editButton(object,name,onEdit));
@@ -266,19 +269,21 @@ public interface EditorEntity<T extends EditorEntity<T>> {
         }
     }
 
-    record ListProperty(String name, List<Property> value, boolean autoExpand, Consumer<Property> addValueFunc,BiConsumer<Property, Integer> valueRemovedFunc, Function<List<Property>, Property> newValueFunc, String editSource) implements Property{
+    record ListProperty(String name, List<Property> value, boolean autoExpand, Runnable createValueFunc, Consumer<EditorEntity<?>> addValueFunc, BiConsumer<Property, Integer> valueRemovedFunc, String editSource) implements Property {
         public ListProperty(String name, List<Property> value, boolean autoExpand){
             this(name, value, autoExpand, null, null, null, null);
+        
         }
-        public ListProperty(String name, List<Property> value, boolean autoExpand, Consumer<Property> addValueFunc, BiConsumer<Property, Integer> removeValueFunc, String editSource){
-            this(name, value, autoExpand, addValueFunc, removeValueFunc, null, editSource);
+        public ListProperty(String name, List<Property> value, boolean autoExpand, Runnable createValueFunc, BiConsumer<Property, Integer> removeValueFunc){
+            this(name, value, autoExpand, createValueFunc, null, removeValueFunc, null);
+        
         }
-        public ListProperty(String name, List<Property> value, boolean autoExpand, Consumer<Property> addValueFunc, BiConsumer<Property, Integer> removeValueFunc, Function<List<Property>, Property> newValueFunc){
-            this(name, value, autoExpand, addValueFunc, removeValueFunc, newValueFunc, null);
+        public ListProperty(String name, List<Property> value, boolean autoExpand, Consumer<EditorEntity<?>> addValueFunc, BiConsumer<Property, Integer> removeValueFunc, String editSource){
+            this(name, value, autoExpand, null, addValueFunc, removeValueFunc, editSource);
         }
 
         public boolean editable() {
-            return addValueFunc != null;
+            return addValueFunc != null || createValueFunc != null;
         }
 
         @Override
@@ -455,8 +460,8 @@ public interface EditorEntity<T extends EditorEntity<T>> {
                 panel.add(component, "span,growx,push");
             }else {
                 panel.add(component);
-                component.setAlignmentX(Component.LEFT_ALIGNMENT);
-                component.setAlignmentY(Component.TOP_ALIGNMENT);
+                component.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+                component.setAlignmentY(java.awt.Component.TOP_ALIGNMENT);
             }
         }
     }
