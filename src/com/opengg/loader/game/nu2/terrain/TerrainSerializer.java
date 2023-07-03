@@ -15,7 +15,7 @@ import org.lwjgl.util.meshoptimizer.MeshOptimizer;
 
 import java.io.*;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -31,7 +31,7 @@ public class TerrainSerializer {
 
         var newModel = SceneExporter.convertToEngineModel(model, false);
         var blocks = new ArrayList<TerrainGroup.TerrainMeshBlock>();
-        try (var scope = MemorySession.openConfined()) {
+        try (var scope = Arena.openConfined()) {
             for (var mesh : newModel.getMeshes()) {
                 var sections = new ArrayList<TerrainGroup.TerrainMeshFace>();
                 var globalMaxMin = getMaxima(mesh.getVertices().stream()
@@ -42,11 +42,11 @@ public class TerrainSerializer {
                 indexBuffer.rewind();
 
                 var unstripMaxSize = MeshOptimizer.meshopt_unstripifyBound(indexBuffer.capacity());
-                var unstripIndices = MemorySegment.allocateNative(unstripMaxSize * Integer.BYTES, scope).asByteBuffer().order(ByteOrder.nativeOrder()).asIntBuffer();
+                var unstripIndices = scope.allocate(unstripMaxSize * Integer.BYTES).asByteBuffer().order(ByteOrder.nativeOrder()).asIntBuffer();
                 var unstripSize = MeshOptimizer.meshopt_unstripify(unstripIndices, indexBuffer, 0);
                  unstripIndices = unstripIndices.slice(0, (int) unstripSize);
 
-                var restripIndices = MemorySegment.allocateNative(indexBuffer.capacity() * Integer.BYTES, scope).asByteBuffer().order(ByteOrder.nativeOrder()).asIntBuffer();
+                var restripIndices = scope.allocate(indexBuffer.capacity() * Integer.BYTES).asByteBuffer().order(ByteOrder.nativeOrder()).asIntBuffer();
                 var restripSize = MeshOptimizer.meshopt_stripify(restripIndices, unstripIndices, mesh.getVertices().size(), 0xffffffff);
 
                 restripIndices = restripIndices.slice(0, (int) restripSize);

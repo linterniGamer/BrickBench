@@ -167,7 +167,7 @@ public class EditorPane extends JPanel implements EditorTab {
                     customProp.createNewInterface(holder, gameObject.get());
                     numNoDefaults++;
                 }
-                case default -> {
+                default -> {
                     if (!prop.name().equals("Name")) {
                         attachPropEditor(defaultPanel, prop, gameObject);
                     }

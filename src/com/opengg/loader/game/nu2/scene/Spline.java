@@ -2,9 +2,12 @@ package com.opengg.loader.game.nu2.scene;
 
 import com.opengg.core.math.Vector3f;
 import com.opengg.loader.MapEntity;
+import com.opengg.loader.Util;
 import com.opengg.loader.editor.EditorState;
+import com.opengg.loader.loading.MapLoader;
 import com.opengg.loader.loading.MapWriter;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -25,10 +28,20 @@ public record Spline(String name, List<Vector3f> points, int address) implements
     
     public void applySplineContentsEdits(SplineCreator.SplineContents editorContents) {
         if (points.size() != editorContents.values().size()) {
+            var diff = editorContents.values().size() - points.size();
+            try {
+                if (diff > 0) {
+                    SceneFileWriter.addSpace(address + 8, diff * 12);
+                } else {
+                    SceneFileWriter.addSpace(address + 8, -diff * 12);
+                }
 
+                MapWriter.applyPatch(MapWriter.WritableObject.SPLINE, address, Util.littleEndian((short) editorContents.values().size()));
+                EditorState.updateMap(MapLoader.reloadIndividualFile("gsc"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
-
-        System.out.println(editorContents);
 
         var newBuffer = ByteBuffer.allocate(editorContents.values().size() * 3 * 12);
 

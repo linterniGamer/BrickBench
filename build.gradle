@@ -19,8 +19,8 @@ apply(plugin: 'org.beryx.jlink')
 group 'com.opengg'
 version '0.3.4'
 
-project.ext.javaVersion = 1.19
-project.ext.lwjglVersion = "3.3.2-SNAPSHOT"
+project.ext.javaVersion = 1.20
+project.ext.lwjglVersion = "3.3.2"
 
 if (Os.isFamily(Os.FAMILY_WINDOWS)) {
     project.ext.lwjglNatives = "natives-windows"
@@ -46,7 +46,7 @@ repositories {
 
 configure(subprojects.findAll {it.name != 'modules'}) {
     apply plugin: 'java'
-    project.ext.javaVersion = 1.19
+    project.ext.javaVersion = 1.20
 
     sourceCompatibility = project.ext.javaVersion
     targetCompatibility = project.ext.javaVersion

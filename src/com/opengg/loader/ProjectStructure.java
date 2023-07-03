@@ -249,7 +249,6 @@ public record ProjectStructure(FolderNode root) {
                 }
                 yield null;
             }
-            case null -> null;
         };
     }
 

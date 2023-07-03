@@ -17,7 +17,7 @@ import com.opengg.loader.game.nu2.terrain.TerrainGroup;
 import java.awt.*;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.Arena;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,8 +42,8 @@ public class TerrainGroupComponent extends EditorEntityRenderComponent {
 
         var allFaces = group.blocks().stream().flatMap(b -> b.faces().stream()).collect(Collectors.toList());
 
-        try (var scope = MemorySession.openConfined()) {
-            var fb = MemorySegment.allocateNative(allFaces.size() * 6 * collisionFormat.getPrimaryVertexLength(), scope).asByteBuffer().order(ByteOrder.nativeOrder());
+        try (var scope = Arena.openConfined()) {
+            var fb = scope.allocate(allFaces.size() * 6 * collisionFormat.getPrimaryVertexLength()).asByteBuffer().order(ByteOrder.nativeOrder());
             for(var face : allFaces){
                 Vector3f newV1 = face.vec1();
                 Vector3f newV2 = face.vec2();
