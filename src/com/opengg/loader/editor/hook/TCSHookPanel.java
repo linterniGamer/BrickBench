@@ -5,6 +5,7 @@ import com.opengg.loader.SwingUtil;
 import com.opengg.loader.editor.MapInterface;
 import com.opengg.loader.editor.components.WrapLayout;
 import com.opengg.loader.editor.hook.TCSHookManager.GameExecutable;
+import com.opengg.loader.editor.tabs.EditorPane;
 import com.opengg.loader.editor.tabs.EditorTabAutoRegister;
 import com.opengg.loader.game.nu2.LevelsTXTParser;
 
@@ -18,7 +19,10 @@ import com.opengg.loader.editor.tabs.EditorTab;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -172,6 +176,84 @@ public class TCSHookPanel extends JPanel implements EditorTab {
 
         tabPane.add("Options", configPanel);
         tabPane.add("AI Messages", aiMessagePanel);
+
+        var camSpeedField = new JTextField("1");
+        var camYawSpeedField = new JTextField("1");
+        var camPitchSpeedField = new JTextField("1");
+
+        JPanel freeCamPanel = new JPanel(new MigLayout("ins 15"));
+        freeCamPanel.setAlignmentX(java.awt.Component.LEFT_ALIGNMENT);
+        freeCamPanel.setAlignmentY(java.awt.Component.TOP_ALIGNMENT);
+
+        JCheckBox freeCamCheckBox = new JCheckBox("Enable Free Cam");
+        freeCamCheckBox.addItemListener(e -> {
+            if(TCSHookManager.currentHook != null) {
+                if(e.getStateChange() == ItemEvent.SELECTED) {
+                    TCSHookManager.currentHook.setCamEnable(true);
+
+                    TCSHookManager.currentHook.setCamSpeeds(Float.parseFloat(camSpeedField.getText()),
+                            Float.parseFloat(camYawSpeedField.getText()),Float.parseFloat(camPitchSpeedField.getText()));
+                } else {
+                    TCSHookManager.currentHook.setCamEnable(false);
+                }
+            }
+        });
+
+        JCheckBox disableUICheckBox = new JCheckBox("Disable UI");
+        disableUICheckBox.addItemListener(e -> {
+            if(TCSHookManager.currentHook != null) {
+                if(e.getStateChange() == ItemEvent.SELECTED) {
+                    TCSHookManager.currentHook.setUIDisable(true);
+                } else {
+                    TCSHookManager.currentHook.setUIDisable(false);
+                }
+            }
+        });
+
+        freeCamPanel.add(freeCamCheckBox);
+        freeCamPanel.add(disableUICheckBox , "pushx, growx, wrap");
+        freeCamPanel.add(new JLabel("Cam Speed"));
+
+        ((AbstractDocument)camSpeedField.getDocument()).setDocumentFilter(EditorPane.floatFilter);
+        freeCamPanel.add(camSpeedField , "pushx, growx, wrap");
+
+        freeCamPanel.add(new JLabel("Cam Yaw Speed"));
+
+        ((AbstractDocument)camYawSpeedField.getDocument()).setDocumentFilter(EditorPane.floatFilter);
+        freeCamPanel.add(camYawSpeedField , "pushx, growx, wrap");
+
+        freeCamPanel.add(new JLabel("Cam Pitch Speed"));
+
+        ((AbstractDocument)camPitchSpeedField.getDocument()).setDocumentFilter(EditorPane.floatFilter);
+        freeCamPanel.add(camPitchSpeedField , "pushx, growx, wrap");
+
+        JButton updateCamSpeeds = new JButton("Update Cam Speeds");
+        updateCamSpeeds.addActionListener((e)->{
+            if(TCSHookManager.currentHook != null && freeCamCheckBox.isSelected()) {
+                TCSHookManager.currentHook.setCamSpeeds(Float.parseFloat(camSpeedField.getText()),
+                        Float.parseFloat(camYawSpeedField.getText()),Float.parseFloat(camPitchSpeedField.getText()));
+            }
+        });
+        freeCamPanel.add(updateCamSpeeds,"span 3, split 3, center, gaptop 15");
+
+        JButton resetCamPos = new JButton("Set Cam Position to Editor View");
+        resetCamPos.addActionListener((e)->{
+            if(TCSHookManager.currentHook != null && freeCamCheckBox.isSelected()){
+                TCSHookManager.currentHook.setCamPosition(BrickBench.CURRENT.ingamePosition);
+            }
+        });
+
+        JButton resetCamPos2 = new JButton("Set Cam Position to Player 1");
+        resetCamPos2.addActionListener((e)->{
+            if(TCSHookManager.currentHook != null && freeCamCheckBox.isSelected()){
+                TCSHookManager.currentHook.setCamPosition(TCSHookManager.currentHook.readPlayerLocation(0));
+            }
+        });
+
+        freeCamPanel.add(resetCamPos);
+        freeCamPanel.add(resetCamPos2);
+
+        tabPane.add("Free Cam", freeCamPanel);
         add(tabPane, BorderLayout.CENTER);
     }
 

@@ -3,6 +3,7 @@ package com.opengg.loader.editor.hook;
 import com.opengg.core.Configuration;
 import com.opengg.core.console.GGConsole;
 import com.opengg.core.math.Vector3f;
+import com.opengg.loader.BrickBench;
 import com.opengg.loader.editor.hook.TCSHookManager.GameExecutable;
 import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
@@ -61,6 +62,7 @@ public class TCSHookCommunicator {
         return switch (this.executable) {
             case LIJ1_GOG -> checkForValidityAndReaquirePointersLIJ();
             case TCS_GOG, TCS_STEAM -> checkForValidityAndReaquirePointersTCS();
+            case LB1_GOG -> false;
         };
     }
 
@@ -178,6 +180,7 @@ public class TCSHookCommunicator {
         return switch (this.executable) {
             case LIJ1_GOG -> getAIMessagesLIJ();
             case TCS_GOG, TCS_STEAM -> getAIMessagesTCS();
+            case LB1_GOG -> List.of();
         };
     }
 
@@ -363,6 +366,81 @@ public class TCSHookCommunicator {
         Kernel32.INSTANCE.WriteProcessMemory(process, loadLevelPtr, enableFlag, 4, null);
     }
 
+    public void setInt(long address,int val){
+        Memory newData = new Memory(4);
+        newData.setInt(0, val);
+        Pointer dataPtr = new Pointer(address);
+        Kernel32.INSTANCE.WriteProcessMemory(process, dataPtr, newData, 4, null);
+    }
+    public void setFloat(long address,float val){
+        Memory newData = new Memory(4);
+        newData.setFloat(0, val);
+        Pointer dataPtr = new Pointer(address);
+        Kernel32.INSTANCE.WriteProcessMemory(process, dataPtr, newData, 4, null);
+    }
+    public void setDouble(long address,double val){
+        Memory newData = new Memory(8);
+        newData.setDouble(0, val);
+        Pointer dataPtr = new Pointer(address);
+        Kernel32.INSTANCE.WriteProcessMemory(process, dataPtr, newData, 8, null);
+    }
+
+    public void setCamSpeeds(float camSpeed,float yawSpeed,float pitchSpeed){
+        final float camSpeedScale = 0.004999999888f;
+        final float yawSpeedScale = 16384.0f;
+        final float pitchSpeedScale = 16384.0f;
+        switch (this.executable) {
+            case TCS_STEAM, TCS_GOG -> setCamSpeedsImpl(camSpeed * camSpeedScale,-yawSpeed * yawSpeedScale,pitchSpeed * pitchSpeedScale,
+                    0x7f10f8,0x6c8098,0x40cde2,
+                    0x6c7d58,0x40cd96);
+            case LIJ1_GOG -> setCamSpeedsImpl(camSpeed * camSpeedScale,yawSpeed * yawSpeedScale,pitchSpeed * pitchSpeedScale,
+                    0x9084b8,0x602328,0x4180da,
+                    0x6d2fc8,0x41808c);
+        }
+    }
+
+    public void setCamSpeedsImpl(float camSpeed,float yawSpeed,float pitchSpeed,long camSpeedAddr,
+                                 long yawSpeedTempMem, long yawSpeedAddr, long pitchSpeedTempMem, long pitchSpeedAddr){
+        setFloat(camSpeedAddr,camSpeed);
+        setDouble(yawSpeedTempMem,yawSpeed);
+        setDouble(pitchSpeedTempMem,pitchSpeed);
+        setInt(yawSpeedAddr, (int) yawSpeedTempMem);
+        setInt(pitchSpeedAddr, (int) pitchSpeedTempMem);
+    }
+
+    public void setCamEnable(boolean camEnable){
+        switch (this.executable) {
+            case TCS_STEAM, TCS_GOG -> setCamEnableImpl(camEnable,0x9253D0,0x7f1138,0x7f1114,0x7f1118);
+            case LIJ1_GOG -> setCamEnableImpl(camEnable,0xa90fb8,
+                    0x9084e0,0x9084bc,0x9084c0);
+        }
+    }
+
+    public void setCamEnableImpl(boolean camEnable, long controllerAddress,long controllerReferenceAddress,long camAddress,long camPositionAddress){
+        if(camEnable) {
+            setInt(controllerReferenceAddress, (int) controllerAddress);
+            writeVector3f((int) camPositionAddress, BrickBench.CURRENT.ingamePosition);
+            setInt(camAddress, 1);
+        } else {
+            setInt(camAddress,0);
+            setInt(controllerReferenceAddress,0);
+        }
+    }
+
+    public void setCamPosition(Vector3f position){
+        switch (this.executable){
+            case TCS_STEAM, TCS_GOG -> writeVector3f(0x7f1118,position);
+            case LIJ1_GOG -> writeVector3f(0x9084c0,position);
+        }
+    }
+
+    public void setUIDisable(boolean uiDisable){
+        switch (this.executable) {
+            case TCS_STEAM, TCS_GOG -> setInt(0x87b538, uiDisable ? 1 : 0);
+            case LIJ1_GOG -> setInt(0x9c41ac, uiDisable ? 1 : 0);
+        }
+    }
+
 /*
     public Vector3f getCameraPosition(){
         Pointer camPtr = new Pointer(0x008021b4);
@@ -397,6 +475,7 @@ public class TCSHookCommunicator {
         return switch (this.executable) {
             case LIJ1_GOG -> getAllCharactersLIJ();
             case TCS_STEAM, TCS_GOG -> getAllCharactersTCS();
+            case LB1_GOG -> List.of();
         };
     }
 
