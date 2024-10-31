@@ -816,7 +816,7 @@ public class BrickBench extends GGApplication
 
                 EditorState.closeActiveMap();
 
-                var root = Configuration.getConfigFile("editor.ini").getConfig("lswtcs-clean-game-root");
+                var root = Configuration.getConfigFile("editor.ini").getConfig("lsw-tcs-clean-game-root");
                 if (root.isEmpty()) {
                     var gamePath = Resource.getUserDataPath().resolve(Path.of("games", "lswtcs"));
                     FileUtils.deleteDirectory(gamePath.toFile());
