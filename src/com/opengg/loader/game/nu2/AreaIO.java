@@ -162,6 +162,10 @@ public class AreaIO {
         }
         buf.append("\n");
 
+        if(area.areaProperties().music != null && area.areaProperties().music.length() > 0) {
+            buf.append("music \"").append(area.areaProperties().music).append("\"\n");
+        }
+
         for(var streaming : area.areaProperties().streaming){
             buf.append("streaming \"").append(streaming.levelName).append("\" \"").append(streaming.level1).append("\" \"").append(streaming.level2).append("\"\n");
         }
