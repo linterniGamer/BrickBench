@@ -42,12 +42,16 @@ public interface EditorIcons {
     FlatSVGIcon triggers = loadIcons("trigger2.svg",treeIconSize,treeIconSize);
     FlatSVGIcon render = loadIcons("render.svg",treeIconSize,treeIconSize);
     FlatSVGIcon trash = loadIcons("trash.svg",20,20);
+    FlatSVGIcon lights = loadIcons("lightbulb.svg",treeIconSize,treeIconSize);
 
     //Project Tree Icons
     FlatSVGIcon areas = loadIcons("areas.svg",treeIconSize,treeIconSize);
     FlatSVGIcon maps = loadIcons("maps.svg",treeIconSize,treeIconSize);
 
-    FlatSVGIcon video = loadIcons("video.svg",treeIconSize,treeIconSize);
+    FlatSVGIcon video = loadIcons("playbutton.svg",treeIconSize,treeIconSize);
+
+    FlatSVGIcon leftArrow = loadIcons("leftarrow.svg",(int)(buttonRowIconSize*0.80),(int)(buttonRowIconSize*0.60));
+    FlatSVGIcon rightArrow = loadIcons("rightarrow.svg",(int)(buttonRowIconSize*0.80),(int)(buttonRowIconSize*0.60));
 
     /**
      * Load the icon with the given name.
@@ -91,6 +95,7 @@ public interface EditorIcons {
             Map.entry("Models", EditorIcons.model),
             Map.entry("SpecialObjects", EditorIcons.specialobject),
             Map.entry("StaticObjects", EditorIcons.staticmesh),
+            Map.entry("Lights",EditorIcons.lights),
             Map.entry("DisplayLists", EditorIcons.staticmesh),
             Map.entry("Triggers", EditorIcons.triggers),
             Map.entry("Render", EditorIcons.render),
