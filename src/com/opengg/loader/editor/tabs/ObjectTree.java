@@ -249,11 +249,13 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
                 int selRow = tree.getRowForLocation(e.getX(), e.getY());
                 if (selRow != -1) {
                     var selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-                    if (selectedNode.getUserObject() instanceof ObjectTree.EditorEntityNode mon) {
-                        if (e.getClickCount() == 1) {
-                            EditorState.selectObject(mon.object);
-                        } else if (e.getClickCount() == 2 && mon.object.pos() != null) {
-                            BrickBench.CURRENT.player.setPositionOffset(mon.object.pos().multiply(-1, 1, 1));
+                    if(selectedNode != null) {
+                        if (selectedNode.getUserObject() instanceof ObjectTree.EditorEntityNode mon) {
+                            if (e.getClickCount() == 1) {
+                                EditorState.selectObject(mon.object);
+                            } else if (e.getClickCount() == 2 && mon.object.pos() != null) {
+                                BrickBench.CURRENT.player.setPositionOffset(mon.object.pos().multiply(-1, 1, 1));
+                            }
                         }
                     }
                 }
