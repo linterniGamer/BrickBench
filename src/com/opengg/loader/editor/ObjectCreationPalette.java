@@ -38,6 +38,7 @@ public class ObjectCreationPalette extends JTree {
                     Map.entry("Tube", () -> select("Gizmo/Tubes/", GizWriter.addNewGizmo("Tube"))),
                     Map.entry("Creature Spawn", () -> select("AI/Creatures/", AIWriter.addAICreature())),
                     Map.entry("Locator Set", () -> select("AI/LocatorSets/", AIWriter.addLocatorSet())),
+                    Map.entry("Trigger", () -> select("AI/Triggers/", AIWriter.addAITrigger())),
                     Map.entry("Spline", () -> {
                         var splineCreator = SplineCreator.create(c -> {});
                     }),
@@ -90,6 +91,7 @@ public class ObjectCreationPalette extends JTree {
 
         var aiCharacter = new DefaultMutableTreeNode(new TreeCategory("Creature Spawn", EditorIcons.objectTreeIconMap.get("Creatures")));
         var aiLocatorSet = new DefaultMutableTreeNode(new TreeCategory("Locator Set", EditorIcons.objectTreeIconMap.get("LocatorSets")));
+        var aiTrigger = new DefaultMutableTreeNode(new TreeCategory("Trigger", EditorIcons.objectTreeIconMap.get("Triggers")));
 
         gizmos.add(gizmoPickup);
         gizmos.add(gizmoZipUp);
@@ -100,6 +102,7 @@ public class ObjectCreationPalette extends JTree {
 
         ai.add(aiCharacter);
         ai.add(aiLocatorSet);
+        ai.add(aiTrigger);
 
         root.add(ai);
         root.add(gizmos);

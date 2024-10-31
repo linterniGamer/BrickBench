@@ -96,7 +96,7 @@ public class EditorPane extends JPanel implements EditorTab {
             name.setText(nameSProperty.stringValue());
             if (nameSProperty.editable()) {
                 name.setEditable(true);
-                name.addActionListener(a -> gameObject.get().applyPropertyEdit("Name", new EditorEntity.StringProperty("Name", name.getText(), true, 0)));
+                name.addActionListener(a -> gameObject.get().applyPropertyEdit("Name", new EditorEntity.StringProperty("Name", name.getText(), true, nameSProperty.maxLen())));
             }
         }else {
             name.setText(gameObject.get().name());

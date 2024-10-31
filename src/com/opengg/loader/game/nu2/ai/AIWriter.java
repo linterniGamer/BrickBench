@@ -1,5 +1,6 @@
 package com.opengg.loader.game.nu2.ai;
 
+import com.opengg.core.math.Vector3f;
 import com.opengg.loader.BrickBench;
 import com.opengg.loader.Util;
 import com.opengg.loader.editor.EditorState;
@@ -57,6 +58,28 @@ public class AIWriter {
         MapWriter.addSpaceAtLocation(MapWriter.WritableObject.CREATURE_SPAWN, lastAIEnd, length);
         MapWriter.applyPatch(MapWriter.WritableObject.CREATURE_SPAWN, lastAIEnd, creatureBytes);
         MapWriter.applyPatch(MapWriter.WritableObject.CREATURE_SPAWN, aiData.creatureStartAddress().get(), newCount);
+
+        return name;
+    }
+    public static String addAITrigger() {
+        var aiData = EditorState.getActiveMap().levelData().<NU2MapData>as().ai();
+        var length = 16 + 12 + 12 + 2 + 2;
+
+        var name = "Trigger_" + aiData.triggers().size();
+        var newTrigger = ByteBuffer.allocate(length).order(ByteOrder.LITTLE_ENDIAN)
+                .put(Util.getStringBytes(name, 16))
+                .put(BrickBench.CURRENT.ingamePosition.toLittleEndianByteBuffer())
+                .put(new Vector3f(1).toLittleEndianByteBuffer())
+                .putShort((short) 0)
+                .putShort((short)0);
+
+        var newCount = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(aiData.triggers().size() + 1);
+
+        var lastAIEnd = aiData.triggerEndAddress().get();
+
+        MapWriter.addSpaceAtLocation(MapWriter.WritableObject.TRIGGER, lastAIEnd, length);
+        MapWriter.applyPatch(MapWriter.WritableObject.TRIGGER, lastAIEnd, newTrigger);
+        MapWriter.applyPatch(MapWriter.WritableObject.TRIGGER, aiData.triggerStartAddress().get(), newCount);
 
         return name;
     }

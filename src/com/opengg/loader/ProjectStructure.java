@@ -28,6 +28,7 @@ public record ProjectStructure(FolderNode root) {
             @JsonSubTypes.Type(value = MapXml.class, name = "map")
     })
     @JsonIdentityInfo(generator = ObjectIdGenerators.StringIdGenerator.class, property = "id", scope = Node.class)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public sealed interface Node<T extends Node<T>> extends EditorEntity<T> permits FolderNode, Area, MapXml, ProjectResource{
         String name();
     }

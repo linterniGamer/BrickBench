@@ -256,7 +256,7 @@ public class AI2Loader{
             }
         }
 
-
+        mapData.ai().triggerStartAddress().set(fileData.position());
         int numTriggers = fileData.getInt();
         for (int i = 0; i < numTriggers; i++) {
             int filePos = fileData.position();
@@ -270,6 +270,7 @@ public class AI2Loader{
             byte one = fileData.get();
             byte two = fileData.get();
         }
+        mapData.ai().triggerEndAddress().set(fileData.position());
 
         if(pathCount != 0){
             if(version >= 6){

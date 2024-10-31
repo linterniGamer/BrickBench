@@ -186,9 +186,11 @@ public record NU2MapData(String name,
                          FastInt locatorAddress,
                          FastInt locatorSetAddress,
                          FastInt creatureStartAddress,
-                         FastInt creatureEndAddress){
+                         FastInt creatureEndAddress,
+                         FastInt triggerStartAddress,
+                         FastInt triggerEndAddress){
         public AIData(){
-            this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),new ArrayList<>(), new FastInt(), new FastInt(), new FastInt(), new FastInt(), new FastInt());
+            this(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),new ArrayList<>(), new FastInt(), new FastInt(), new FastInt(), new FastInt(), new FastInt() , new FastInt(), new FastInt());
         }
     }
 

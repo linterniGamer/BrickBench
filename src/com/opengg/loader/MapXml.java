@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
  */
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @JsonSerialize
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class MapXml implements ProjectStructure.Node<MapXml> {
     private String name;
     private MapType mapType;
