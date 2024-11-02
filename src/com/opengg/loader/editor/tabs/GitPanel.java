@@ -63,8 +63,7 @@ public class GitPanel extends JPanel implements MouseListener, MouseMotionListen
         offX = this.getWidth() / 2;
         offY = this.getHeight() / 2;
 
-        AffineTransform orig = g2d.getTransform();
-        transform = new AffineTransform(orig);
+        transform = new AffineTransform();
         transform.translate(offX, offY);
         transform.scale(scale, scale);
         transform.translate(-offX, -offY);
