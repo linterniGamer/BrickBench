@@ -37,7 +37,7 @@ public record Project(boolean isProject,
      */
     public enum GameVersion {
         LIJ1(NU2, "lij1", "Lego Indiana Jones 1", "LEGOIndy.exe"),
-        LB1(NU2, "lb1", "Lego Batman"),
+        LB1(NU2, "lb1", "Lego Batman","LEGOBatman.exe"),
         LSW_TCS(NU2, "lsw-tcs", "Lego Star Wars: The Complete Saga", "LEGOStarWarsSaga.exe"),
 
         LHP1_4(NXG, "lhp1-4", "Lego Harry Potter: Years 1-4"),

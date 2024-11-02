@@ -97,6 +97,7 @@ public class TCSHookManager {
         TCS_GOG(GameVersion.LSW_TCS, "gog", "GOG"),
         TCS_STEAM(GameVersion.LSW_TCS, "steam", "Steam"),
         LIJ1_GOG(GameVersion.LIJ1, "gog", "GOG"),
+        LB1_STEAM(GameVersion.LB1, "steam", "Steam"),
         LB1_GOG(GameVersion.LB1, "gog", "GOG");
 
         public GameVersion GAME;

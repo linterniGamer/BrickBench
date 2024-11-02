@@ -1,5 +1,6 @@
 package com.opengg.loader.editor.hook;
 
+import com.opengg.core.console.GGConsole;
 import com.opengg.loader.MapXml;
 import com.opengg.loader.SwingUtil;
 import com.opengg.loader.editor.MapInterface;
@@ -314,7 +315,7 @@ public class TCSHookPanel extends JPanel implements EditorTab {
             var names = namesStream.toArray(String[]::new);
             mapCombo.setModel(new DefaultComboBoxModel<>(names));
         } catch (IOException e) {
-            e.printStackTrace();
+            GGConsole.error("Unable to find levels.txt file at " + levelsFile.toAbsolutePath());
         }
 
     }

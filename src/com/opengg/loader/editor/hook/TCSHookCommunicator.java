@@ -62,7 +62,7 @@ public class TCSHookCommunicator {
         return switch (this.executable) {
             case LIJ1_GOG -> checkForValidityAndReaquirePointersLIJ();
             case TCS_GOG, TCS_STEAM -> checkForValidityAndReaquirePointersTCS();
-            case LB1_GOG -> false;
+            case LB1_GOG,LB1_STEAM -> checkForValidityAndReaquirePointersLB1();
         };
     }
 
@@ -105,6 +105,29 @@ public class TCSHookCommunicator {
         currentPlayerTwoAddress = playerTwoStructPtr.getInt(0);
 
         Pointer pointer3 = Pointer.createConstant(0x933e94);
+        Memory mapPtr = new Memory(4);
+        Kernel32.INSTANCE.ReadProcessMemory(process, pointer3, mapPtr, 4, null);
+        mapAddress = mapPtr.getInt(0);
+
+        return true;
+    }
+
+    private boolean checkForValidityAndReaquirePointersLB1(){
+        if(Kernel32.INSTANCE.WaitForSingleObject(process, 0) != WinError.WAIT_TIMEOUT){
+            return false;
+        }
+
+        Pointer pointer = Pointer.createConstant(0xab2960);
+        Memory playerOneStructPtr = new Memory(4);
+        Kernel32.INSTANCE.ReadProcessMemory(process, pointer, playerOneStructPtr, 4, null);
+        currentPlayerOneAddress = playerOneStructPtr.getInt(0);
+
+        Pointer pointer2 = Pointer.createConstant(0xab2964);
+        Memory playerTwoStructPtr = new Memory(4);
+        Kernel32.INSTANCE.ReadProcessMemory(process, pointer2, playerTwoStructPtr, 4, null);
+        currentPlayerTwoAddress = playerTwoStructPtr.getInt(0);
+
+        Pointer pointer3 = Pointer.createConstant(0x95f894);
         Memory mapPtr = new Memory(4);
         Kernel32.INSTANCE.ReadProcessMemory(process, pointer3, mapPtr, 4, null);
         mapAddress = mapPtr.getInt(0);
@@ -180,7 +203,7 @@ public class TCSHookCommunicator {
         return switch (this.executable) {
             case LIJ1_GOG -> getAIMessagesLIJ();
             case TCS_GOG, TCS_STEAM -> getAIMessagesTCS();
-            case LB1_GOG -> List.of();
+            case LB1_GOG,LB1_STEAM -> getAIMessagesLB1();
         };
     }
 
@@ -249,6 +272,37 @@ public class TCSHookCommunicator {
         return list;
     }
 
+    private List<TCSHookPanel.AIMessage> getAIMessagesLB1(){
+        Memory mem = new Memory(8);
+        Pointer pointer2 = new Pointer(0xad110c);
+        if(!Kernel32.INSTANCE.ReadProcessMemory(process, pointer2, mem, 8, null)){
+            throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
+        }
+        int entryPTR = mem.getInt(0) + 0x10;
+        pointer2 = new Pointer(entryPTR);
+        if(!Kernel32.INSTANCE.ReadProcessMemory(process, pointer2, mem, 8, null)){
+            throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
+        }
+        entryPTR = mem.getInt(0);
+        ArrayList<TCSHookPanel.AIMessage> list = new ArrayList<>();
+        while(entryPTR != 0){
+            //System.out.println("Entry: " + Integer.toHexString(entryPTR));
+            Pointer entryPointer = new Pointer(entryPTR);
+            Memory entry = new Memory(56);
+            if(!Kernel32.INSTANCE.ReadProcessMemory(process,entryPointer,entry,56,null)){
+                throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
+            }
+            int next = entry.getInt(0);
+            String name = new String(entry.getByteArray(8,32)).trim();
+            float value = entry.getFloat(40);
+            //System.out.println(name + "," + value);
+            list.add(new TCSHookPanel.AIMessage(name,value,entryPTR));
+            entryPTR = next;
+        }
+        return list;
+    }
+
+
     public void updateAIMessage(List<TCSHookPanel.AIMessage> messages){
         Memory valueMem = new Memory(4);
         Pointer valuePTR;
@@ -263,7 +317,27 @@ public class TCSHookCommunicator {
         switch (this.executable) {
             case TCS_STEAM, TCS_GOG -> setTargetMapTCS(id);
             case LIJ1_GOG -> setTargetMapLIJ(id);
+            case LB1_GOG,LB1_STEAM -> setTargetMapLB1(id);
         }
+    }
+
+    private void setTargetMapLB1(int id){
+        Pointer levelDataStartPtr = new Pointer(0x00ac9894);//0x00951b78, 0x00951b98
+        Memory levelDataStart = new Memory(4);
+        Kernel32.INSTANCE.ReadProcessMemory(process, levelDataStartPtr, levelDataStart, 4, null);
+
+        var end = id * 0x150 + levelDataStart.getInt(0);
+
+        Memory newTarget = new Memory(4);
+        newTarget.setInt(0, end);
+        Pointer newLevelDataPtr = new Pointer(0x00ac989c);//0x00951b80, 0x00951ba0
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 4, null);
+
+        Memory enableFlag = new Memory(4);
+        enableFlag.setInt(0, 1);
+        Pointer loadLevelPtr = new Pointer(0x00ab29e0);//0x0093d84c, 0x0093d870
+
+        Kernel32.INSTANCE.WriteProcessMemory(process, loadLevelPtr, enableFlag, 4, null);
     }
 
     private void setTargetMapTCS(int id){
@@ -289,6 +363,7 @@ public class TCSHookCommunicator {
         switch (this.executable) {
             case TCS_STEAM, TCS_GOG -> resetDoorTCS();
             case LIJ1_GOG -> resetDoorLIJ();
+            case LB1_GOG,LB1_STEAM -> resetDoorLB1();
         }
     }
 
@@ -296,6 +371,7 @@ public class TCSHookCommunicator {
         switch (this.executable) {
             case TCS_STEAM, TCS_GOG -> setResetBitTCS();
             case LIJ1_GOG -> setResetBitLIJ();
+            case LB1_GOG,LB1_STEAM -> setResetBitLB1();
         }
     }
 
@@ -330,6 +406,7 @@ public class TCSHookCommunicator {
     }
 
     private void setResetBitLIJ(){
+        //area
         Memory newTarget2 = new Memory(4);
         newTarget2.setInt(0, -1);
         Pointer newLevelDataPtr2 = new Pointer(0x9367e4);
@@ -341,9 +418,35 @@ public class TCSHookCommunicator {
             e.printStackTrace();
         }
 
+        //resetbit
         Memory newTarget = new Memory(4);
         newTarget.setInt(0, 1);
         Pointer newLevelDataPtr = new Pointer(0xacc7a8);
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 4, null);
+    }
+
+    private void resetDoorLB1(){
+        Memory newTarget = new Memory(1);
+        newTarget.setByte(0, (byte)0);
+        Pointer newLevelDataPtr = new Pointer(0x00aca000);
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 1, null);
+    }
+
+    private void setResetBitLB1(){
+        Memory newTarget2 = new Memory(4);
+        newTarget2.setInt(0, -1);
+        Pointer newLevelDataPtr2 = new Pointer(0x9619c4);
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr2, newTarget2, 4, null);
+
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Memory newTarget = new Memory(4);
+        newTarget.setInt(0, 1);
+        Pointer newLevelDataPtr = new Pointer(0xaaf89c);
         Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 4, null);
     }
 
@@ -396,6 +499,8 @@ public class TCSHookCommunicator {
             case LIJ1_GOG -> setCamSpeedsImpl(camSpeed * camSpeedScale,yawSpeed * yawSpeedScale,pitchSpeed * pitchSpeedScale,
                     0x9084b8,0x602328,0x4180da,
                     0x6d2fc8,0x41808c);
+            case LB1_GOG,LB1_STEAM -> setCamSpeedsImpl(camSpeed * camSpeedScale,-yawSpeed * yawSpeedScale,pitchSpeed * pitchSpeedScale,
+                    0x935164,0x673334,0x41b3c7,0x79d258,0x41b379);
         }
     }
 
@@ -413,6 +518,7 @@ public class TCSHookCommunicator {
             case TCS_STEAM, TCS_GOG -> setCamEnableImpl(camEnable,0x9253D0,0x7f1138,0x7f1114,0x7f1118);
             case LIJ1_GOG -> setCamEnableImpl(camEnable,0xa90fb8,
                     0x9084e0,0x9084bc,0x9084c0);
+            case LB1_GOG, LB1_STEAM -> setCamEnableImpl(camEnable,0xa95388,0x93518c,0x935168,0x93516c);
         }
     }
 
@@ -431,6 +537,7 @@ public class TCSHookCommunicator {
         switch (this.executable){
             case TCS_STEAM, TCS_GOG -> writeVector3f(0x7f1118,position);
             case LIJ1_GOG -> writeVector3f(0x9084c0,position);
+            case LB1_GOG, LB1_STEAM -> writeVector3f(0x93516c,position);
         }
     }
 
@@ -438,6 +545,7 @@ public class TCSHookCommunicator {
         switch (this.executable) {
             case TCS_STEAM, TCS_GOG -> setInt(0x87b538, uiDisable ? 1 : 0);
             case LIJ1_GOG -> setInt(0x9c41ac, uiDisable ? 1 : 0);
+            case LB1_GOG,LB1_STEAM -> setInt(0x9c9c30, uiDisable ? 1 : 0);
         }
     }
 
@@ -475,7 +583,7 @@ public class TCSHookCommunicator {
         return switch (this.executable) {
             case LIJ1_GOG -> getAllCharactersLIJ();
             case TCS_STEAM, TCS_GOG -> getAllCharactersTCS();
-            case LB1_GOG -> List.of();
+            case LB1_GOG,LB1_STEAM -> getAllCharactersLB1();
         };
     }
 
@@ -524,6 +632,30 @@ public class TCSHookCommunicator {
             var location = readCharacterLocation(firstPos + (i * 5552));
             if(!location.equals(new Vector3f(0,0,0))){
                 characters.add(new HookCharacter(location, readCharacterAngle(firstPos + (i * 5552)), 0));
+            }
+        }
+
+        return characters;
+    }
+
+    public List<HookCharacter> getAllCharactersLB1(){
+        Pointer listCountAddr = new Pointer(0xab2648);
+        Memory listSize = new Memory(4);
+        Kernel32.INSTANCE.ReadProcessMemory(process, listCountAddr, listSize, 4, null);
+
+        int size = listSize.getInt(0);
+
+        Pointer listPtrAddr = new Pointer(0xab264c);
+        Memory listCharPtr = new Memory(4);
+        Kernel32.INSTANCE.ReadProcessMemory(process, listPtrAddr, listCharPtr, 4, null);
+
+        var firstPos = listCharPtr.getInt(0);
+
+        var characters = new ArrayList<HookCharacter>();
+        for(int i = 2; i < 40; i++){
+            var location = readCharacterLocation(firstPos + (i * 0x1648));
+            if(!location.equals(new Vector3f(0,0,0))){
+                characters.add(new HookCharacter(location, readCharacterAngle(firstPos + (i * 0x1648)), 0));
             }
         }
 
