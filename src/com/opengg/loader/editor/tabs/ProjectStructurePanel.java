@@ -104,29 +104,32 @@ public class ProjectStructurePanel extends JPanel implements EditorTab {
                 int selRow = projectTree.getRowForLocation(e.getX(), e.getY());
                 if (selRow != -1) {
                     var selectedNode = (DefaultMutableTreeNode) projectTree.getLastSelectedPathComponent();
-                    var selectedNodeObject = (ProjectTree.ProjectNodeUserObject) selectedNode.getUserObject();
-                    if (e.getButton() == MouseEvent.BUTTON1) {
-                        if (e.getClickCount() == 1) {
-                            switch (selectedNodeObject.node()) {
-                                case Area an -> EditorState.selectObject(an);
-                                case MapXml mn -> EditorState.selectObject(mn);
-                                case ProjectStructure.FolderNode fn -> EditorState.selectTemporaryObject(fn);
-                                case ProjectResource pr -> EditorState.selectTemporaryObject(pr);
+                    if(selectedNode != null) {
+                        var selectedNodeObject = (ProjectTree.ProjectNodeUserObject) selectedNode.getUserObject();
+                        if (e.getButton() == MouseEvent.BUTTON1) {
+                            if (e.getClickCount() == 1) {
+                                switch (selectedNodeObject.node()) {
+                                    case Area an -> EditorState.selectObject(an);
+                                    case MapXml mn -> EditorState.selectObject(mn);
+                                    case ProjectStructure.FolderNode fn -> EditorState.selectTemporaryObject(fn);
+                                    case ProjectResource pr -> EditorState.selectTemporaryObject(pr);
 
-                                case null, default -> {
-                                }
-                            }
-                        } else if(e.getClickCount() == 2) {
-                            switch (selectedNodeObject.node()) {
-                                case MapXml mn -> OpenGG.asyncExec(() -> BrickBench.CURRENT.useMapFromCurrentProject(mn));
-                                case ProjectResource rn -> {
-                                    try {
-                                        Desktop.getDesktop().open(project.projectXml().resolveSibling(rn.path()).toFile());
-                                    } catch (IOException ex) {
-                                        SwingUtil.showErrorAlert("Failed to open resource", ex);
+                                    case null, default -> {
                                     }
                                 }
-                                default -> {}
+                            } else if (e.getClickCount() == 2) {
+                                switch (selectedNodeObject.node()) {
+                                    case MapXml mn -> OpenGG.asyncExec(() -> BrickBench.CURRENT.useMapFromCurrentProject(mn));
+                                    case ProjectResource rn -> {
+                                        try {
+                                            Desktop.getDesktop().open(project.projectXml().resolveSibling(rn.path()).toFile());
+                                        } catch (IOException ex) {
+                                            SwingUtil.showErrorAlert("Failed to open resource", ex);
+                                        }
+                                    }
+                                    default -> {
+                                    }
+                                }
                             }
                         }
                     }
