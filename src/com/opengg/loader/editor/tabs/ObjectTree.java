@@ -188,8 +188,12 @@ public class ObjectTree extends JPanel implements MouseListener, Scrollable {
                 });
             }
         }
-
-        return path.toString().substring(1);
+        var outPath = path.toString();
+        if(outPath.length() > 1){
+            return outPath.substring(1);
+        } else {
+            return "";
+        }
     }
 
     private void applyVisibilityToNode(DefaultMutableTreeNode node, boolean visible) {
