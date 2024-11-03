@@ -7,7 +7,6 @@ open module com.opengg.loader {
 
     requires java.desktop;
     requires java.logging;
-    requires com.formdev.flatlaf.extras;
     requires jdk.crypto.cryptoki;
 
     requires org.apache.commons.io;
@@ -20,15 +19,19 @@ open module com.opengg.loader {
     requires com.sun.jna;
     requires com.sun.jna.platform;
     requires org.lwjgl.nfd;
+    requires org.lwjgl.nfd.natives;
     requires org.lwjgl.meshoptimizer;
+    requires org.lwjgl.meshoptimizer.natives;
 
     requires com.formdev.flatlaf;
     requires com.formdev.flatlaf.intellijthemes;
+    requires com.formdev.flatlaf.extras;
+
 
     requires com.github.benmanes.caffeine;
 
-    requires miglayout.core;
-    requires miglayout.swing;
+    requires com.miglayout.core;
+    requires com.miglayout.swing;
 
     requires vcdiff.core;
     requires discord.rpc;
