@@ -254,12 +254,16 @@ public interface EditorEntity<T extends EditorEntity<T>> {
 
                 if(useArrows()){
                     OpenGG.asyncExec(() -> {
-                        var arrow = new ArrowComponent(
-                                v -> object.applyPropertyEdit(name, onEdit.get()),
-                                vecPanel::setValue)
-                                .setPositionOffset(value());
-                        WorldEngine.getCurrent().attach(arrow);
-                        EditorState.CURRENT.temporaryEditorComponents.add(arrow);
+                        String arrowName = name+"-arrow-temp-:123:";
+                        if(WorldEngine.findEverywhereByName(arrowName).size() == 0) {
+                            var arrow = new ArrowComponent(
+                                    v -> object.applyPropertyEdit(name, onEdit.get()),
+                                    v -> SwingUtilities.invokeLater(() -> vecPanel.setValue(v)))
+                                    .setPositionOffset(value());
+                            arrow.setName(arrowName);
+                            WorldEngine.getCurrent().attach(arrow);
+                            EditorState.CURRENT.temporaryEditorComponents.add(arrow);
+                        }
                     });
                 }
                 panel.add(editButton(object,name,onEdit));
