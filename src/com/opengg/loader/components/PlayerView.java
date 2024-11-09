@@ -72,6 +72,12 @@ public class PlayerView extends ControlledComponent implements Actionable {
         }
     }
 
+    public void dropInputs(){
+        control.x = 0;
+        control.y = 0;
+        control.z = 0;
+    }
+
     public float getSpeed() {
         return speed;
     }

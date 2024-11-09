@@ -2,6 +2,7 @@ package com.opengg.loader.loading;
 
 import com.opengg.core.console.GGConsole;
 import com.opengg.core.engine.Resource;
+import com.opengg.core.io.input.keyboard.KeyboardController;
 import com.opengg.loader.*;
 import com.opengg.loader.editor.BottomRow;
 import com.opengg.loader.editor.EditorState;
@@ -29,7 +30,8 @@ public class MapLoader {
      */
     public static Project.MapInstance loadMapFromXml(Project project, MapXml mapXml) throws IOException {
         GGConsole.log("Parsing map " + mapXml.name() + " at " + mapXml.mapFilesDirectory() + " as " + project.game().NAME);
-
+        BrickBench.CURRENT.player.dropInputs();
+        KeyboardController.resetKeyStates();
         try (var alert = SwingUtil.showLoadingAlert("Loading...", "Unpacking and loading map " + mapXml.name(), false)) {
             var files = new ArrayList<MapFile>();
 
@@ -76,6 +78,9 @@ public class MapLoader {
             BottomRow.setLoadProgress(files.size());
             BottomRow.setLoadState("Loaded map " + mapXml.name());
             GGConsole.log("Done loading " + mapXml.name());
+
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
 
             return new Project.MapInstance(files, mapData);
         }

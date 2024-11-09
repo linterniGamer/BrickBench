@@ -3,6 +3,8 @@ package com.opengg.loader.editor;
 import com.opengg.core.Configuration;
 import com.opengg.core.engine.OpenGG;
 import com.opengg.core.engine.Resource;
+import com.opengg.core.io.input.keyboard.KeyboardController;
+import com.opengg.core.render.window.awt.window.GGCanvas;
 import com.opengg.core.world.WorldEngine;
 import com.opengg.loader.FileUtil;
 import com.opengg.loader.Project;
@@ -85,12 +87,18 @@ public class TopBar extends JMenuBar {
 
         var saveProject = makeByName("save", new JMenuItem("Save Project"));
         saveProject.addActionListener(a -> {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
+
             if(EditorState.getProject() != null && EditorState.getProject().isProject()){
                 ProjectIO.saveProject(EditorState.getProject(), EditorState.getProject().projectSource());
                 JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "Saved project at " + EditorState.getProject().projectSource());
             }else{
                 JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "No project is currently open.");
             }
+
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
         });
         saveProject.setToolTipText("Saves the current project file.");
         saveProject.setMnemonic(KeyEvent.VK_S);
@@ -98,6 +106,8 @@ public class TopBar extends JMenuBar {
 
         var saveAsProject = makeByName("saveAs", new JMenuItem("Save As"));
         saveAsProject.addActionListener(a -> {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
             if(EditorState.getProject() != null && EditorState.getProject().isProject()){
                 var newPath = FileUtil.openSaveDialog(EditorState.getProject().projectSource().getParent().toString(), FileUtil.LoadType.FILE, "BrickBench Project", "brickbench");
 
@@ -108,6 +118,8 @@ public class TopBar extends JMenuBar {
             }else{
                 JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "No project is currently open.");
             }
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
         });
         saveAsProject.setToolTipText("Saves the current project file with a new name.");
         saveAsProject.setMnemonic(KeyEvent.VK_S);
@@ -126,7 +138,11 @@ public class TopBar extends JMenuBar {
         importMap.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.CTRL_DOWN_MASK));
 
         var loadMap = makeByName("map", new JMenuItem("Load Read-only Map"));
-        loadMap.addActionListener(a -> BrickBench.CURRENT.openProjectChooser());
+        loadMap.addActionListener(a -> {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
+            BrickBench.CURRENT.openProjectChooser();
+        });
         loadMap.setToolTipText("Load a map for viewing.");
         loadMap.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
 
@@ -140,29 +156,40 @@ public class TopBar extends JMenuBar {
         cleanFiles.setToolTipText("Cleans the project working files and game directories. This allows you to reimport a clean copy of the game.");
 
         var settingsMenu = makeByName("settings", new JMenuItem("Settings"));
-        settingsMenu.addActionListener(a -> new SettingsDialog(BrickBench.CURRENT.window));
+        settingsMenu.addActionListener(a -> {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
+            new SettingsDialog(BrickBench.CURRENT.window);
+        });
         settingsMenu.setToolTipText("Open the settings menu.");
-        settingsMenu.setMnemonic(KeyEvent.VK_T);
-        settingsMenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
+        settingsMenu.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK | KeyEvent.ALT_DOWN_MASK));
 
         var export = makeByName("export", new JMenuItem("Export"));
         export.addActionListener(e -> {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
             if(EditorState.getProject() != null && EditorState.getProject().isProject()){
                 new ExportDialog(EditorState.getProject());
             }else{
                 JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "No project is currently open.");
             }
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
         });
         export.setMnemonic(KeyEvent.VK_E);
         export.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.CTRL_DOWN_MASK ));
 
         var test = makeByName("test", new JMenuItem("Test Project"));
         test.addActionListener(e -> {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
             if(EditorState.getProject() != null && EditorState.getProject().isProject()){
                 ProjectIO.testProject(EditorState.getProject());
             }else{
                 JOptionPane.showMessageDialog(BrickBench.CURRENT.window, "No project is currently open.");
             }
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
         });
         test.setMnemonic(KeyEvent.VK_T);
         test.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
