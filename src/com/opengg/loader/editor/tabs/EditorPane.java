@@ -69,8 +69,12 @@ public class EditorPane extends JPanel implements EditorTab {
         topBar.setBackground(new FlatToggleButton().getTabSelectedBackground());
         topBar.setBorder(new EmptyBorder(5,4,5,4));
 
-        EditorState.addMapReloadListener(s -> refresh(EditorState.getSelectedObject()));
-        EditorState.addSelectionChangeListener(s -> refresh(EditorState.getSelectedObject()));
+        EditorState.addMapReloadListener(s ->
+                SwingUtilities.invokeLater(() -> refresh(EditorState.getSelectedObject()))
+        );
+        EditorState.addSelectionChangeListener(s ->
+                SwingUtilities.invokeLater(() -> refresh(EditorState.getSelectedObject()))
+        );
 
         type.setIconTextGap(5);
 
