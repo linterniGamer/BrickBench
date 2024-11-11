@@ -1,6 +1,7 @@
 package com.opengg.loader.editor.hook;
 
 import com.opengg.core.console.GGConsole;
+import com.opengg.core.math.Vector3f;
 import com.opengg.loader.MapXml;
 import com.opengg.loader.SwingUtil;
 import com.opengg.loader.editor.MapInterface;
@@ -24,7 +25,12 @@ import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.*;
@@ -38,8 +44,9 @@ public class TCSHookPanel extends JPanel implements EditorTab {
     private JButton connectButton;
     private JTextField mapID;
     private JCheckBox door, reset;
-    private JComboBox<String> mapCombo;
+    private JComboBox<String> mapCombo, doorCombo;
     private Map<String, Integer> mapNameToID = new HashMap<>();
+    private Map<Integer, String> mapIDToDirectory = new HashMap<>();
 
     public TCSHookPanel() {
         setLayout(new BorderLayout());
@@ -63,8 +70,50 @@ public class TCSHookPanel extends JPanel implements EditorTab {
         hookManagerPanel.add(mapID);
 
         mapCombo = new JComboBox<>();
-        mapCombo.addActionListener(m -> mapID.setText(String.valueOf(mapNameToID.get((String) mapCombo.getSelectedItem()))));
+
+        doorCombo = new JComboBox<>();
+        doorCombo.setEnabled(false);
+
+        mapCombo.addActionListener(m -> {
+            int mapIntId = mapNameToID.get((String) mapCombo.getSelectedItem());
+            mapID.setText(String.valueOf(mapIntId));
+            String levelDir = mapIDToDirectory.get(mapIntId);
+
+            try{
+                var newMap = Path.of(TCSHookManager.currentHook.getDirectory().normalize().toString(), "levels",levelDir,mapCombo.getSelectedItem()+".txt");
+                try(Scanner fis = new Scanner(new File(newMap.normalize().toString()))){
+                    boolean inDoor = false;
+
+                    Vector<String> doors = new Vector<>();
+
+                    doors.add("<Default Start>");
+
+                    while(fis.hasNext()){
+                        String line = fis.nextLine();
+                        if(inDoor && line.toLowerCase().contains("spline")){
+                            String spline = line.substring(line.indexOf('"')+1,line.lastIndexOf('"'));
+                            doors.add(spline);
+                        }
+
+                        if(line.toLowerCase().contains("door_start")){
+                            inDoor = true;
+                        } else if (line.toLowerCase().contains("door_end")){
+                            inDoor = false;
+                        }
+                    }
+
+                    doorCombo.setModel(new DefaultComboBoxModel<>(doors));
+                } catch (FileNotFoundException e){
+                    GGConsole.log("Unable to read txt file for map. Are your files fully extracted?");
+                } catch (Exception e){
+                    System.out.println(e);
+                }
+            } catch (InvalidPathException e) {
+                //no real map yet
+            }
+        });
         hookManagerPanel.add(mapCombo);
+        hookManagerPanel.add(doorCombo);
 
         var loadMap = new JButton("Load map");
         hookManagerPanel.add(loadMap);
@@ -137,6 +186,9 @@ public class TCSHookPanel extends JPanel implements EditorTab {
         var autoload = new JCheckBox("Autoload maps from current hooked game");
         reset = new JCheckBox("Reset map on load");
         door = new JCheckBox("Reset door on load");
+        door.addActionListener(e->{
+            doorCombo.setEnabled(door.isSelected());
+        });
         autoload.setSelected(Boolean.parseBoolean(Configuration.getConfigFile("editor.ini").getConfig("autoload-hook")));
         autoload.addActionListener(a -> {
             Configuration.getConfigFile("editor.ini").writeConfig("autoload-hook", String.valueOf(autoload.isSelected())); BrickBench.CURRENT.reloadConfigFileData();
@@ -279,8 +331,11 @@ public class TCSHookPanel extends JPanel implements EditorTab {
 
     public void loadCurrentMap() {
         if(TCSHookManager.isEnabled()) {
+            String selectedDoor = doorCombo.getSelectedIndex() == 0 ? "" : (String)doorCombo.getSelectedItem();
+            selectedDoor = selectedDoor.toLowerCase();
+
             if(door.isSelected()){
-                TCSHookManager.currentHook.resetDoor();
+                TCSHookManager.currentHook.resetDoor(selectedDoor);
             }
 
             if(reset.isSelected()) {
@@ -303,7 +358,9 @@ public class TCSHookPanel extends JPanel implements EditorTab {
             mapNameToID.clear();
 
             for(var level : levels){
-                mapNameToID.put(level.name(), levels.indexOf(level));
+                int index = levels.indexOf(level);
+                mapNameToID.put(level.name(), index);
+                mapIDToDirectory.put(index,level.path());
             }
 
             var namesStream = levels.stream()
@@ -315,7 +372,7 @@ public class TCSHookPanel extends JPanel implements EditorTab {
             var names = namesStream.toArray(String[]::new);
             mapCombo.setModel(new DefaultComboBoxModel<>(names));
         } catch (IOException e) {
-            GGConsole.error("Unable to find levels.txt file at " + levelsFile.toAbsolutePath());
+            GGConsole.error("Unable to find levels.txt file at " + levelsFile.toAbsolutePath() + ". Are your files fully extracted?");
         }
 
     }

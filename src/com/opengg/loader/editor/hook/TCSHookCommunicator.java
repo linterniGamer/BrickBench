@@ -302,6 +302,37 @@ public class TCSHookCommunicator {
         return list;
     }
 
+    private void resetAIMessagesLB1(){
+        Memory mem = new Memory(8);
+        Pointer pointer2 = new Pointer(0xad110c);
+        if(!Kernel32.INSTANCE.ReadProcessMemory(process, pointer2, mem, 8, null)){
+            throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
+        }
+        int entryPTR = mem.getInt(0) + 0x10;
+        pointer2 = new Pointer(entryPTR);
+        if(!Kernel32.INSTANCE.ReadProcessMemory(process, pointer2, mem, 8, null)){
+            throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
+        }
+        entryPTR = mem.getInt(0);
+        ArrayList<TCSHookPanel.AIMessage> list = new ArrayList<>();
+        while(entryPTR != 0){
+            //System.out.println("Entry: " + Integer.toHexString(entryPTR));
+            Pointer entryPointer = new Pointer(entryPTR);
+            Memory entry = new Memory(56);
+            if(!Kernel32.INSTANCE.ReadProcessMemory(process,entryPointer,entry,56,null)){
+                throw new Win32Exception(Kernel32.INSTANCE.GetLastError());
+            }
+            int next = entry.getInt(0);
+            String name = new String(entry.getByteArray(8,32)).trim();
+            //float value = entry.getFloat(40);
+
+            setFloat(entryPTR+40,0);
+            //System.out.println(name + "," + value);
+            //list.add(new TCSHookPanel.AIMessage(name,value,entryPTR));
+            entryPTR = next;
+        }
+    }
+
 
     public void updateAIMessage(List<TCSHookPanel.AIMessage> messages){
         Memory valueMem = new Memory(4);
@@ -359,11 +390,11 @@ public class TCSHookCommunicator {
         Kernel32.INSTANCE.WriteProcessMemory(process, loadLevelPtr, enableFlag, 4, null);
     }
 
-    public void resetDoor() {
+    public void resetDoor(String door) {
         switch (this.executable) {
-            case TCS_STEAM, TCS_GOG -> resetDoorTCS();
-            case LIJ1_GOG -> resetDoorLIJ();
-            case LB1_GOG,LB1_STEAM -> resetDoorLB1();
+            case TCS_STEAM, TCS_GOG -> resetDoorTCS(door);
+            case LIJ1_GOG -> resetDoorLIJ(door);
+            case LB1_GOG,LB1_STEAM -> resetDoorLB1(door);
         }
     }
 
@@ -375,11 +406,13 @@ public class TCSHookCommunicator {
         }
     }
 
-    public void resetDoorTCS(){
-        Memory newTarget = new Memory(1);
-        newTarget.setByte(0, (byte)0);
+    public void resetDoorTCS(String door){
+        Memory newTarget = new Memory(door.length()+1);
+        if(door.length() > 0)
+            newTarget.setString(0,door,"ascii");
+        newTarget.setByte(door.length(), (byte)0);
         Pointer newLevelDataPtr = new Pointer(0x009513d8);
-        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 1, null);
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, door.length()+1, null);
     }
 
     public void setResetBitTCS(){
@@ -398,11 +431,13 @@ public class TCSHookCommunicator {
         Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 4, null);
     }
 
-    private void resetDoorLIJ(){
-        Memory newTarget = new Memory(1);
-        newTarget.setByte(0, (byte)0);
+    private void resetDoorLIJ(String door){
+        Memory newTarget = new Memory(door.length()+1);
+        if(door.length() > 0)
+            newTarget.setString(0,door,"ascii");
+        newTarget.setByte(door.length(), (byte)0);
         Pointer newLevelDataPtr = new Pointer(0x00accd90);
-        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 1, null);
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, door.length()+1, null);
     }
 
     private void setResetBitLIJ(){
@@ -425,19 +460,17 @@ public class TCSHookCommunicator {
         Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 4, null);
     }
 
-    private void resetDoorLB1(){
-        Memory newTarget = new Memory(1);
-        newTarget.setByte(0, (byte)0);
+    private void resetDoorLB1(String door){
+        Memory newTarget = new Memory(door.length()+1);
+        if(door.length() > 0)
+            newTarget.setString(0,door,"ascii");
+        newTarget.setByte(door.length(), (byte)0);
         Pointer newLevelDataPtr = new Pointer(0x00aca000);
-        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 1, null);
+        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, door.length()+1, null);
     }
 
     private void setResetBitLB1(){
-        Memory newTarget2 = new Memory(4);
-        newTarget2.setInt(0, -1);
-        Pointer newLevelDataPtr2 = new Pointer(0x9619c4);
-        Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr2, newTarget2, 4, null);
-
+        resetAIMessagesLB1();
         try {
             Thread.sleep(200);
         } catch (InterruptedException e) {
@@ -445,7 +478,7 @@ public class TCSHookCommunicator {
         }
 
         Memory newTarget = new Memory(4);
-        newTarget.setInt(0, 1);
+        newTarget.setInt(0, -1);
         Pointer newLevelDataPtr = new Pointer(0xaaf89c);
         Kernel32.INSTANCE.WriteProcessMemory(process, newLevelDataPtr, newTarget, 4, null);
     }
