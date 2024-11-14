@@ -117,10 +117,27 @@ public final class Area implements ProjectStructure.Node<Area> {
         }
     }
 
+    public static class AreaLevelEntry {
+        public static int counter = 0;
+        public String name = "AreaLevelEntry ";
+        public String level = "DefaultLevelEntry";
+
+        public AreaLevelEntry() {
+            name += counter;
+            counter++;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+    }
+
     public static class AreaGlobalProperties {
         @JsonIgnore public String dir;
         @JsonIgnore public String file;
         @JsonIgnore public List<String> levels = new ArrayList<>();
+        public List<AreaLevelEntry> levelEntries = new ArrayList<>();
         public String minikit = "";
         public int nameId = 0;
         public int textId = -1;

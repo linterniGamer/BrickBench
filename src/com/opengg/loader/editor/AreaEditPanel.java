@@ -33,6 +33,7 @@ public class AreaEditPanel extends JPanel{
         settingsTabbed.add("Level streaming", createStreamingEditor());
         settingsTabbed.add("Super counters", createSuperCounterEditor());
         settingsTabbed.add("AI messages", createAIMessagesEditor());
+        settingsTabbed.add("Level list",createLevelOrderEditor());
 
         this.add(settingsTabbed,BorderLayout.CENTER);
 
@@ -56,6 +57,59 @@ public class AreaEditPanel extends JPanel{
         this.add(topLevel,BorderLayout.NORTH);
     }
 
+    private JPanel createLevelOrderEditor() {
+        JPanel panel = new JPanel(new BorderLayout());
+        JTable charTable = new JTable();
+        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        Area.AreaProperties props = area.areaProperties();
+        TableModel model = new AbstractTableModel (){
+            private final String[] columnNames = {"Level Name"};
+            public String getColumnName(int col) {
+                return columnNames[col];
+            }
+            public int getRowCount() {
+                return props.globalProperties.levelEntries.size();
+            }
+            public Class<?> getColumnClass(int col) {
+                return String.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return row < this.getRowCount();
+            }
+
+            @Override
+            public Object getValueAt(int rowIndex, int columnIndex) {
+                return switch(columnIndex){
+                    case 0:
+                        yield props.globalProperties.levelEntries.get(rowIndex).level;
+                    default:
+                        throw new IllegalStateException("Unexpected value: " + columnIndex);
+                };
+            }
+
+            public int getColumnCount() {
+                return columnNames.length;
+            }
+
+            @Override
+            public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+                switch (columnIndex) {
+                    case 0 -> props.globalProperties.levelEntries.get(rowIndex).level = (String) aValue;
+                }
+            }
+        };
+        charTable.setModel(model);
+        charTable.setShowVerticalLines(true);
+        panel.add(new JScrollPane(charTable),BorderLayout.CENTER);
+        JButton addButton = SwingUtil.createIconButton(EditorIcons.add, genericTableAdd(Area.AreaLevelEntry::new,props.globalProperties.levelEntries, model));
+        JButton removeButton = SwingUtil.createIconButton(EditorIcons.minus, genericTableRemove(props.globalProperties.levelEntries,model,charTable));
+        topRow.add(addButton);
+        topRow.add(removeButton);
+        panel.add(topRow,BorderLayout.NORTH);
+        return panel;
+    }
 
     private JPanel createCharacterListEditor(){
         JPanel panel = new JPanel(new BorderLayout());
@@ -451,6 +505,9 @@ public class AreaEditPanel extends JPanel{
         var createStatus = new JCheckBox("Create status screen", area.areaProperties().globalProperties.generateStatusScreen);
         createStatus.addActionListener(a -> area.areaProperties().globalProperties.generateStatusScreen = createStatus.isSelected());
 
+        var singleBuffer = new JCheckBox("Single Buffer", area.areaProperties().globalProperties.isSingleBuffer);
+        singleBuffer.addActionListener(a -> area.areaProperties().globalProperties.isSingleBuffer = singleBuffer.isSelected());
+
         var freeplay = new JCheckBox("Allow freeplay", area.areaProperties().globalProperties.hasFreeplay);
         freeplay.addActionListener(a -> area.areaProperties().globalProperties.hasFreeplay = freeplay.isSelected());
 
@@ -528,7 +585,8 @@ public class AreaEditPanel extends JPanel{
 
         panel.add(pickupGravity, "wrap");
         panel.add(characterCollision, "wrap");
-        panel.add(createStatus, "wrap");
+        //panel.add(createStatus, "wrap");
+        panel.add(singleBuffer, "wrap");
 
         return panel;
     }

@@ -29,6 +29,9 @@ public class AreasTXTParser extends TXTParser{
             case "file" -> currentProps.file = tokens[1];
             case "level" -> {
                 currentProps.levels.add(tokens[1]);
+                Area.AreaLevelEntry entry = new Area.AreaLevelEntry();
+                entry.level = tokens[1];
+                currentProps.levelEntries.add(entry);
                 if(tokens[1].toUpperCase(Locale.ROOT).endsWith("STATUS")) currentProps.generateStatusScreen = true;
             }
             case "minikit" -> currentProps.minikit = tokens[1];

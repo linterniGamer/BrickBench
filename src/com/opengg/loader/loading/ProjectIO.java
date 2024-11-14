@@ -211,7 +211,14 @@ public class ProjectIO {
             var cleanFolder = GameBaseManager.getBaseDirectoryOrPromptForNew(project.game()).get();
             var testFolder = cleanFolder.resolveSibling("lswtcs_test");
 
-            FileUtils.deleteDirectory(testFolder.toFile());
+            try {
+                FileUtils.deleteDirectory(testFolder.toFile());
+            } catch (IOException e) {
+                SwingUtil.showErrorAlert("Failed to rebuild test directory at " + testFolder + ". Check that you do not have anything in this directory open in other programs before retrying.");
+                exit.close();
+                return;
+            }
+
             Files.createDirectories(testFolder);
 
             FileUtil.generateLinkTree(cleanFolder, testFolder, false, "pak");

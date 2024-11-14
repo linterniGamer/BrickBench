@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -98,8 +99,25 @@ public class AreaIO {
         props.dir = project.structure().getFolderFor(area).stream().skip(1).collect(Collectors.joining("/"));
 
         props.levels.clear();
-        for(var map : area.maps()){
-            props.levels.add(map.name());
+
+        //Fallback for old projects
+        if(area.areaProperties().globalProperties.levelEntries.isEmpty()) {
+            boolean statusDeclared = false;
+            for (var map : area.maps()) {
+                if (!map.name().equalsIgnoreCase(props.minikit)) {
+                    props.levels.add(map.name());
+                }
+                if(map.name().toUpperCase().endsWith("STATUS")){
+                    statusDeclared = true;
+                }
+            }
+            if(!statusDeclared && area.areaProperties().globalProperties.generateStatusScreen){
+                props.levels.add(area.name()+"_Status");
+            }
+        } else {
+            for(var entry : area.areaProperties().globalProperties.levelEntries){
+                props.levels.add(entry.level);
+            }
         }
 
         return props;
