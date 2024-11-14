@@ -331,7 +331,7 @@ public class TCSHookPanel extends JPanel implements EditorTab {
 
     public void loadCurrentMap() {
         if(TCSHookManager.isEnabled()) {
-            String selectedDoor = doorCombo.getSelectedIndex() == 0 ? "" : (String)doorCombo.getSelectedItem();
+            String selectedDoor = ((doorCombo.getSelectedIndex() == 0) || (doorCombo.getSelectedItem() == null)) ? "" : (String)doorCombo.getSelectedItem();
             selectedDoor = selectedDoor.toLowerCase();
 
             if(door.isSelected()){
