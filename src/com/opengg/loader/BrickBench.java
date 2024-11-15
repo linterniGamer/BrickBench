@@ -885,6 +885,9 @@ public class BrickBench extends GGApplication
         }
 
         if (key == KEY_G) {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
+
             JVectorField vectorField = new JVectorField();
             Object[] goToPrompt = new Object[] {
                     "Position:", vectorField
@@ -896,9 +899,15 @@ public class BrickBench extends GGApplication
                 WorldEngine.findEverywhereByName("player").get(0)
                         .setPositionOffset(vectorField.getValue());
             }
+
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
         }
 
         if (key == KEY_V) {
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
+
             JFormattedTextField vInput = new JFormattedTextField(0.0f);
             Object[] goToPrompt = new Object[] {
                     "New velocity: ", vInput
@@ -909,6 +918,9 @@ public class BrickBench extends GGApplication
             if (option == JOptionPane.OK_OPTION) {
                 player.setSpeed(Float.parseFloat(vInput.getText()));
             }
+
+            BrickBench.CURRENT.player.dropInputs();
+            KeyboardController.resetKeyStates();
         }
 
         if (key == KEY_LEFT_CONTROL && MouseController.isButtonDown(MOUSE_BUTTON_LEFT)) {
