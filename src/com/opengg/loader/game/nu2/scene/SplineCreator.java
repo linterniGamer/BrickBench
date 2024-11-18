@@ -61,18 +61,24 @@ public class SplineCreator extends EditorEntityRenderComponent implements Editor
             case B_SPLINE -> newContents.values();
             case RAW_SPLINE -> newContents.values();
         };
-
-        var buf = Allocator.allocFloat(realPoints.size() * 8);
-        for (var point : realPoints) {
-            buf.put(point.x).put(point.y).put(point.z).put(1).put(1).put(1).put(1).put(1);
-        }
-        buf.flip();
-
-        var drawnObject = DrawnObject.create(buf);
-        drawnObject.setRenderType(DrawnObject.DrawType.LINE_STRIP);
-
         this.contents = newContents;
-        this.setRenderable(new TextureRenderable(drawnObject, Texture.ofColor(Color.GREEN)));
+
+        if(!realPoints.isEmpty()) {
+            this.setEnabled(true);
+            var buf = Allocator.allocFloat(realPoints.size() * 8);
+            for (var point : realPoints) {
+                buf.put(point.x).put(point.y).put(point.z).put(1).put(1).put(1).put(1).put(1);
+            }
+            buf.flip();
+
+            var drawnObject = DrawnObject.create(buf);
+            drawnObject.setRenderType(DrawnObject.DrawType.LINE_STRIP);
+
+            this.setRenderable(new TextureRenderable(drawnObject, Texture.ofColor(Color.GREEN)));
+        }else{
+            this.setEnabled(false);
+        }
+
         EditorState.selectTemporaryObject(this);
     }
 
@@ -112,7 +118,7 @@ public class SplineCreator extends EditorEntityRenderComponent implements Editor
             true,
             () -> {
                 var newList = new ArrayList<>(contents.values());
-                newList.add(BrickBench.CURRENT.player.getPosition());
+                newList.add(BrickBench.CURRENT.player.getPosition().multiply(new Vector3f(-1,1,1)));
 
                 OpenGG.asyncExec(() -> updateContents(
                     new SplineContents(contents.type(), List.copyOf(newList), newList.size())));

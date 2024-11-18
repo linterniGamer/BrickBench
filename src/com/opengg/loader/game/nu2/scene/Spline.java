@@ -33,7 +33,7 @@ public record Spline(String name, List<Vector3f> points, int address) implements
                 if (diff > 0) {
                     SceneFileWriter.addSpace(address + 8, diff * 12);
                 } else {
-                    SceneFileWriter.addSpace(address + 8, -diff * 12);
+                    SceneFileWriter.removeSpace(address + 8, -diff * 12);
                 }
 
                 MapWriter.applyPatch(MapWriter.WritableObject.SPLINE, address, Util.littleEndian((short) editorContents.values().size()));
@@ -43,7 +43,7 @@ public record Spline(String name, List<Vector3f> points, int address) implements
             }
         }
 
-        var newBuffer = ByteBuffer.allocate(editorContents.values().size() * 3 * 12);
+        var newBuffer = ByteBuffer.allocate(editorContents.values().size() * 3 * Float.BYTES);
 
         for (var value : editorContents.values()) {
             newBuffer.put(value.toLittleEndianByteBuffer());

@@ -54,9 +54,10 @@ public class ListPropertyComponent extends JPanel {
             if(prop.valueRemovedFunc() != null){
                 JButton removeButton = new JButton("Remove");
                 removeButton.addActionListener(e -> {
-                    int index = ArrayUtils.indexOf(selected.getParent().getComponents(), selected);
-
-                    prop.valueRemovedFunc().accept(prop.value().get(index), index);
+                    if(selected != null) {
+                        int index = ArrayUtils.indexOf(selected.getParent().getComponents(), selected);
+                        prop.valueRemovedFunc().accept(prop.value().get(index), index);
+                    }
                 });
                 container.add(removeButton);
             }
