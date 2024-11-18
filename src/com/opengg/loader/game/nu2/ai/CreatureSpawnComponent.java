@@ -11,11 +11,11 @@ import com.opengg.loader.components.NativeCache;
 import java.awt.*;
 
 public class CreatureSpawnComponent extends EditorEntityRenderComponent {
-    public static Vector3f BOX_SIZE = new Vector3f(0.2f, 0.4f, 0.2f);
+    public final static Vector3f BOX_SIZE = new Vector3f(0.2f, 0.4f, 0.2f);
 
     public CreatureSpawnComponent(CreatureSpawn creature) {
-        super(creature, new TextureRenderable(NativeCache.CUBE, Texture.ofColor(Color.RED, 1)),
-                new SceneRenderUnit.UnitProperties().shaderPipeline("xFixOnly"));
+        super(creature, new TextureRenderable(NativeCache.ARROW, Texture.ofColor(Color.RED, 1))
+                , new SceneRenderUnit.UnitProperties().shaderPipeline("xFixOnly"));
         this.setUpdateEnabled(false);
         this.setPositionOffset(creature.spawnPos().add(new Vector3f(0, BOX_SIZE.y()/2, 0)));
         this.setScaleOffset(BOX_SIZE);

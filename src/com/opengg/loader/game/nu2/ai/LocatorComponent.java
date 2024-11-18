@@ -11,9 +11,8 @@ import com.opengg.loader.components.NativeCache;
 import java.awt.*;
 
 public class LocatorComponent extends EditorEntityRenderComponent {
-
     public LocatorComponent(AILocator locator) {
-        super(locator, new TextureRenderable(NativeCache.CUBE, Texture.ofColor(Color.BLUE, 1)),
+        super(locator,new TextureRenderable(NativeCache.ARROW, Texture.ofColor(Color.BLUE, 1)),
                 new SceneRenderUnit.UnitProperties().shaderPipeline("xFixOnly"));
         this.setUpdateEnabled(false);
         this.setPositionOffset(locator.pos());
