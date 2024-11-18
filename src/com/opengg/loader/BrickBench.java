@@ -246,6 +246,7 @@ public class BrickBench extends GGApplication
 
         var defaults = Map.ofEntries(
                 Map.entry("sensitivity", "0.5"),
+                Map.entry("camera-lock","true"),
                 Map.entry("laf", "Flat Dark"),
                 Map.entry("fov", "90"),
                 Map.entry("use-backup-lij-vao", "true"),

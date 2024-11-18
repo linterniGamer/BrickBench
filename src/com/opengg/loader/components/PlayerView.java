@@ -1,10 +1,8 @@
 package com.opengg.loader.components;
 
 import com.opengg.core.Configuration;
-import com.opengg.core.math.Quaternionf;
-import com.opengg.core.math.Vector2f;
-import com.opengg.core.math.Vector3f;
-import com.opengg.core.math.Vector3fm;
+import com.opengg.core.io.input.mouse.MouseController;
+import com.opengg.core.math.*;
 import com.opengg.core.world.Action;
 import com.opengg.core.world.ActionType;
 import com.opengg.core.world.Actionable;
@@ -19,6 +17,7 @@ import com.opengg.core.world.components.WorldObject;
 public class PlayerView extends ControlledComponent implements Actionable {
 
     private final Vector3fm control = new Vector3fm();
+    private final Vector3fm rot = new Vector3fm();
 
     private float speed = 8;
     private boolean usingMouse = true;
@@ -36,12 +35,14 @@ public class PlayerView extends ControlledComponent implements Actionable {
     @Override
     public void update(float delta){
         if(usingMouse){
-            Vector2f mousepos = getMouse();
-            Vector3f currot = new Vector3f(-mousepos.y, -mousepos.x, 0);
-            if(Configuration.getBoolean("camera-lock"))
-                currot = new Vector3f(Math.min(90, Math.max(-90, -mousepos.y)), -mousepos.x, 0);
+            Vector2f mouseDelta = MouseController.getDeltaPos().multiply(Configuration.getFloat("sensitivity"));
+            rot.x += -mouseDelta.y;
+            rot.y += -mouseDelta.x;
 
-            this.setRotationOffset(Quaternionf.createYXZ(currot));
+            if(Configuration.getBoolean("camera-lock"))
+                rot.x = FastMath.clamp(rot.x, -90, 90);
+
+            this.setRotationOffset(Quaternionf.createYXZ(new Vector3f(rot)));
         }
 
         Vector3f vel = this.getRotation().transform(new Vector3f(control).multiply(delta * speed));

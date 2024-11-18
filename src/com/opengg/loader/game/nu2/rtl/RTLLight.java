@@ -51,7 +51,7 @@ public record RTLLight (Vector3f pos, Vector3f rot, Vector3f color, Vector3f fli
 
     @Override
     public BoundingBox getBoundingBox() {
-        return new BoundingBox(pos.subtract(0.15f), pos.add(0.15f));
+        return new BoundingBox(pos.subtract(0.07f), pos.add(0.07f));
     }
 
     public enum LightType {
